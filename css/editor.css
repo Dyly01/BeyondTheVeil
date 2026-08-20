@@ -1,0 +1,36 @@
+body {
+
+    margin: 0;
+
+    overflow: hidden;
+
+    background: #202020;
+
+    font-family: Arial, sans-serif;
+}
+
+
+#toolbar {
+
+    position: fixed;
+
+    top: 10px;
+    left: 10px;
+
+    z-index: 10;
+
+    display: flex;
+
+    gap: 5px;
+}
+
+
+button {
+
+    padding: 8px 14px;
+
+    border: none;
+
+    cursor: pointer;
+
+}
