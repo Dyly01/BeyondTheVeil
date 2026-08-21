@@ -58,7 +58,7 @@ function updatePlayer(deltaTime) {
         player.velocityX -=
             player.acceleration * deltaTime;
     }
-    else if (
+    if (
         isKeyDown("d") ||
         isKeyDown("ArrowRight")
     ) {
@@ -66,7 +66,7 @@ function updatePlayer(deltaTime) {
         player.velocityX +=
             player.acceleration * deltaTime;
     }
-    else {
+    if ((!isKeyDown("a") && !isKeyDown("ArrowLeft") && !isKeyDown("d") && !isKeyDown("ArrowRight")) || (isKeyDown("a") || isKeyDown("ArrowLeft")) && (isKeyDown("ArrowRight") || isKeyDown("ArrowRight"))) {
 
         player.velocityX *= player.friction;
     }
