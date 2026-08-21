@@ -76,6 +76,13 @@ document
 
     });
 
+document
+    .getElementById("saveButton")
+    .addEventListener(
+        "click",
+        saveLevel
+    );
+
 // get platform at position
 function getPlatformAtPosition(x, y) {
 
@@ -406,38 +413,48 @@ function drawGrid() {
     }
 }
 
-// platforms setup
-const platforms = [
+// level loading
+let level = null;
 
-    {
-        x: 0,
-        y: 600,
-        width: 1000,
-        height: 50
-    },
+let platforms = [];
 
-    {
-        x: 200,
-        y: 500,
-        width: 200,
-        height: 30
-    },
+let spawn = {
+    x: 0,
+    y: 0
+};
 
-    {
-        x: 550,
-        y: 420,
-        width: 250,
-        height: 30
-    },
+// Load level from JSON file
+async function loadLevel() {
 
-    {
-        x: 850,
-        y: 330,
-        width: 150,
-        height: 30
-    }
+    const response =
+        await fetch("./level.json");
 
-];
+
+    level =
+        await response.json();
+
+
+    platforms =
+        level.platforms;
+
+
+    spawn =
+        level.spawn;
+
+
+    editorWorld.width =
+        level.width;
+
+
+    editorWorld.height =
+        level.height;
+
+
+    console.log(
+        "Editor level loaded:",
+        level
+    );
+}
 
 // draw platforms
 function drawPlatforms() {
@@ -534,13 +551,120 @@ function drawPlatforms() {
     }
 }
 
-const spawn = {
+// save level to JSON file
+function createLevelData() {
 
-    x: 200,
+    return {
 
-    y: 200
+        name: level.name,
 
-};
+        width: level.width,
+
+        height: level.height,
+
+        spawn: {
+            x: spawn.x,
+            y: spawn.y
+        },
+
+        platforms: platforms
+
+    };
+}
+
+function createJSON() {
+
+    const levelData =
+        createLevelData();
+
+
+    return JSON.stringify(
+        levelData,
+        null,
+        4
+    );
+}
+
+async function saveLevel() {
+
+    const json =
+        createJSON();
+
+    if ("showSaveFilePicker" in window) {
+
+        const handle =
+            await window.showSaveFilePicker({
+
+                suggestedName:
+                    "level.json",
+
+                types: [
+
+                    {
+                        description:
+                            "JSON Level",
+
+                        accept: {
+                            "application/json":
+                                [".json"]
+                        }
+
+                    }
+
+                ]
+
+            });
+
+
+        const writable =
+            await handle.createWritable();
+
+
+        await writable.write(json);
+
+
+        await writable.close();
+
+
+        console.log(
+            "Level saved successfully."
+        );
+
+
+        return;
+    }
+
+
+    const blob =
+        new Blob(
+            [json],
+            {
+                type:
+                    "application/json"
+            }
+        );
+
+
+    const url =
+        URL.createObjectURL(blob);
+
+
+    const link =
+        document.createElement("a");
+
+
+    link.href = url;
+
+    link.download =
+        "level.json";
+
+
+    link.click();
+
+
+    URL.revokeObjectURL(url);
+
+}
 
 function drawSpawn() {
 
@@ -586,4 +710,12 @@ function gameLoop() {
 }
 
 
-gameLoop();
+async function startEditor() {
+
+    await loadLevel();
+
+    gameLoop();
+}
+
+
+startEditor();
