@@ -66,6 +66,16 @@ document
 
     });
 
+document
+    .getElementById("eraseTool")
+    .addEventListener("click", () => {
+
+        currentTool = "erase";
+
+        selectedPlatform = null;
+
+    });
+
 // get platform at position
 function getPlatformAtPosition(x, y) {
 
@@ -109,6 +119,34 @@ canvas.addEventListener(
                 event.offsetX,
                 event.offsetY
             );
+
+
+        if (currentTool === "erase") {
+
+            const platform =
+                getPlatformAtPosition(
+                    worldPosition.x,
+                    worldPosition.y
+                );
+
+
+            if (platform) {
+
+                const index =
+                    platforms.indexOf(platform);
+
+
+                if (index !== -1) {
+
+                    platforms.splice(index, 1);
+
+                }
+
+            }
+
+
+            return;
+        }
 
 
         // Check if we clicked a platform
