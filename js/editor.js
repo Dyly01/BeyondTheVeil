@@ -46,7 +46,146 @@ const camera = {
 
 };
 
+const history = [];
+
+let historyIndex = -1;
+
+function createEditorSnapshot() {
+
+    return JSON.parse(
+        JSON.stringify({
+            platforms,
+            spawn,
+            level
+        })
+    );
+}
+
+function saveHistoryState() {
+
+    // Remove states after the current one
+
+    history.splice(
+        historyIndex + 1
+    );
+
+
+    history.push(
+        createEditorSnapshot()
+    );
+
+
+    historyIndex =
+        history.length - 1;
+}
+
+function restoreHistoryState(snapshot) {
+
+    platforms =
+        JSON.parse(
+            JSON.stringify(
+                snapshot.platforms
+            )
+        );
+
+
+    spawn =
+        JSON.parse(
+            JSON.stringify(
+                snapshot.spawn
+            )
+        );
+
+
+    level =
+        JSON.parse(
+            JSON.stringify(
+                snapshot.level
+            )
+        );
+
+
+    editorWorld.width =
+        level.width;
+
+    editorWorld.height =
+        level.height;
+
+
+    selectedPlatform = null;
+
+    resizingHandle = null;
+
+    isDragging = false;
+
+
+    updatePropertiesPanel();
+
+    canvas.style.cursor =
+        "default";
+}
+
 const editorKeys = {};
+
+document.addEventListener(
+    "keydown",
+    (event) => {
+
+        const activeElement =
+            document.activeElement;
+
+
+        const isTyping =
+            activeElement.tagName === "INPUT" ||
+            activeElement.tagName === "TEXTAREA";
+
+
+        if (isTyping) {
+            return;
+        }
+
+
+        // Delete
+
+        if (
+            event.key === "Delete" &&
+            selectedPlatform
+        ) {
+
+            deleteSelectedPlatform();
+
+            return;
+        }
+
+
+        // Undo
+
+        if (
+            event.ctrlKey &&
+            event.key.toLowerCase() === "z"
+        ) {
+
+            undo();
+
+        }
+
+    }
+);
+
+function undo() {
+
+    if (historyIndex <= 0) {
+        return;
+    }
+
+
+    historyIndex--;
+
+
+    restoreHistoryState(
+        history[historyIndex]
+    );
+}
 
 document.addEventListener(
     "keydown",
@@ -66,6 +205,44 @@ document.addEventListener(
 
     }
 );
+
+function deleteSelectedPlatform() {
+
+    if (!selectedPlatform) {
+        return;
+    }
+
+
+    const index =
+        platforms.indexOf(
+            selectedPlatform
+        );
+
+
+    if (index === -1) {
+        return;
+    }
+
+
+    platforms.splice(
+        index,
+        1
+    );
+
+
+    selectedPlatform = null;
+
+    resizingHandle = null;
+
+    isDragging = false;
+
+
+    updatePropertiesPanel();
+
+    canvas.style.cursor = "default";
+
+    saveHistoryState();
+}
 
 function updateCamera(deltaTime) {
 
@@ -315,6 +492,89 @@ function getResizeHandle(x, y, platform) {
     return null;
 }
 
+function updateCursor(mouseX, mouseY) {
+
+    // No selected platform
+    if (!selectedPlatform) {
+
+        canvas.style.cursor = "default";
+
+        return;
+    }
+
+
+    // Check resize handles
+
+    const handle =
+        getResizeHandle(
+            mouseX,
+            mouseY,
+            selectedPlatform
+        );
+
+
+    if (handle === "topLeft") {
+
+        canvas.style.cursor =
+            "nwse-resize";
+
+        return;
+    }
+
+
+    if (handle === "topRight") {
+
+        canvas.style.cursor =
+            "nesw-resize";
+
+        return;
+    }
+
+
+    if (handle === "bottomLeft") {
+
+        canvas.style.cursor =
+            "nesw-resize";
+
+        return;
+    }
+
+
+    if (handle === "bottomRight") {
+
+        canvas.style.cursor =
+            "nwse-resize";
+
+        return;
+    }
+
+
+    // Check whether mouse is
+    // inside the selected platform
+
+    const worldPosition =
+        screenToWorld(
+            mouseX,
+            mouseY
+        );
+
+
+    if (
+        getPlatformAtPosition(
+            worldPosition.x,
+            worldPosition.y
+        ) === selectedPlatform
+    ) {
+
+        canvas.style.cursor = "grab";
+
+        return;
+    }
+
+
+    canvas.style.cursor = "default";
+}
+
 canvas.addEventListener(
     "mousedown",
     (event) => {
@@ -393,6 +653,19 @@ canvas.addEventListener(
                         event.offsetY
                     );
 
+
+                originalPlatform = {
+
+                    x: selectedPlatform.x,
+
+                    y: selectedPlatform.y,
+
+                    width: selectedPlatform.width,
+
+                    height: selectedPlatform.height
+
+                };
+
                 return;
             }
         }
@@ -411,6 +684,9 @@ canvas.addEventListener(
 
             selectedPlatform = platform;
 
+            updatePropertiesPanel();
+
+            canvas.style.cursor = "grabbing";
 
             // Remember where inside the platform
             // we clicked.
@@ -454,6 +730,8 @@ canvas.addEventListener(
         
         selectedPlatform = null;
 
+        updatePropertiesPanel();
+
 
         dragStart = {
 
@@ -470,6 +748,52 @@ canvas.addEventListener(
 
     }
 );
+
+const propertiesPanel =
+    document.getElementById("propertiesPanel");
+
+const propertyX =
+    document.getElementById("propertyX");
+
+const propertyY =
+    document.getElementById("propertyY");
+
+const propertyWidth =
+    document.getElementById("propertyWidth");
+
+const propertyHeight =
+    document.getElementById("propertyHeight");
+
+const applyProperties =
+    document.getElementById("applyProperties");
+
+function updatePropertiesPanel() {
+
+    if (!selectedPlatform) {
+
+        propertiesPanel.style.display =
+            "none";
+
+        return;
+    }
+
+
+    propertiesPanel.style.display =
+        "block";
+
+
+    propertyX.value =
+        selectedPlatform.x;
+
+    propertyY.value =
+        selectedPlatform.y;
+
+    propertyWidth.value =
+        selectedPlatform.width;
+
+    propertyHeight.value =
+        selectedPlatform.height;
+}
 
 canvas.addEventListener(
     "mousemove",
@@ -618,6 +942,7 @@ canvas.addEventListener(
                     platform.y;
             }
 
+            updatePropertiesPanel();
 
             return;
         }
@@ -642,6 +967,7 @@ canvas.addEventListener(
                     dragOffsetY
                 );
 
+            updatePropertiesPanel();
 
             return;
         }
@@ -662,6 +988,23 @@ canvas.addEventListener(
             )
 
         };
+
+    }
+);
+
+canvas.addEventListener(
+    "mousemove",
+    (event) => {
+
+        if (isDragging) {
+            return;
+        }
+
+
+        updateCursor(
+            event.offsetX,
+            event.offsetY
+        );
 
     }
 );
@@ -736,16 +1079,35 @@ canvas.addEventListener(
     "mouseup",
     () => {
 
-        if (resizingHandle) {
+        canvas.style.cursor = "default";
 
-            resizingHandle = null;
+        if (resizingHandle) {
 
             isDragging = false;
 
-            originalPlatform = null;
+            const changed =
+                originalPlatform &&
+                (
+                    selectedPlatform.x !== originalPlatform.x ||
+                    selectedPlatform.y !== originalPlatform.y ||
+                    selectedPlatform.width !== originalPlatform.width ||
+                    selectedPlatform.height !== originalPlatform.height
+                );
 
-            return;
-        }
+
+            if (changed) {
+
+                saveHistoryState();
+
+            }
+
+
+        resizingHandle = null;
+
+        originalPlatform = null;
+
+        return;
+    }
 
         if (!isDragging) {
             return;
@@ -757,6 +1119,25 @@ canvas.addEventListener(
         if (selectedPlatform) {
 
             isDragging = false;
+
+            // Check whether the platform was actually changed
+
+            const changed =
+                originalPlatform &&
+                (
+                    selectedPlatform.x !== originalPlatform.x ||
+                    selectedPlatform.y !== originalPlatform.y ||
+                    selectedPlatform.width !== originalPlatform.width ||
+                    selectedPlatform.height !== originalPlatform.height
+                );
+
+
+            if (changed) {
+
+                saveHistoryState();
+
+            }
+
 
             originalPlatform = null;
 
@@ -804,6 +1185,8 @@ canvas.addEventListener(
                 height
 
             });
+        
+            saveHistoryState();
 
         }
 
@@ -1091,6 +1474,69 @@ function drawPlatforms() {
     }
 }
 
+function applyPropertyChanges() {
+
+    if (!selectedPlatform) {
+        return;
+    }
+
+
+    const x =
+        Number(propertyX.value);
+
+    const y =
+        Number(propertyY.value);
+
+    const width =
+        Number(propertyWidth.value);
+
+    const height =
+        Number(propertyHeight.value);
+
+
+    // Make sure the values are valid
+
+    if (
+        !Number.isFinite(x) ||
+        !Number.isFinite(y) ||
+        !Number.isFinite(width) ||
+        !Number.isFinite(height)
+    ) {
+
+        return;
+    }
+
+
+    // Apply values
+
+    selectedPlatform.x =
+        snapToGrid(x);
+
+    selectedPlatform.y =
+        snapToGrid(y);
+
+    selectedPlatform.width =
+        Math.max(
+            GRID_SIZE,
+            snapToGrid(width)
+        );
+
+    selectedPlatform.height =
+        Math.max(
+            GRID_SIZE,
+            snapToGrid(height)
+        );
+    
+    saveHistoryState();
+
+    updatePropertiesPanel();
+}
+
+applyProperties.addEventListener(
+    "click",
+    applyPropertyChanges
+);
+
 // save level to JSON file
 function createLevelData() {
 
@@ -1290,6 +1736,8 @@ function loadLevelData(loadedLevel) {
 
     selectedPlatform = null;
 
+    updatePropertiesPanel();
+
     isDragging = false;
 
 
@@ -1386,7 +1834,13 @@ async function startEditor() {
 
     await loadLevel();
 
-    requestAnimationFrame(gameLoop);
+
+    saveHistoryState();
+
+
+    requestAnimationFrame(
+        gameLoop
+    );
 }
 
 

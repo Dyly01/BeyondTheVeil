@@ -34,3 +34,88 @@ button {
     cursor: pointer;
 
 }
+
+#propertiesPanel {
+
+    display: none;
+
+    position: fixed;
+
+    right: 20px;
+    bottom: 20px;
+
+    width: 220px;
+
+    padding: 15px;
+
+    background: #222;
+
+    border: 1px solid #555;
+
+    border-radius: 8px;
+
+    color: white;
+
+    font-family: Arial, sans-serif;
+
+    box-shadow:
+        0 4px 15px rgba(0, 0, 0, 0.5);
+
+    z-index: 100;
+
+}
+
+
+#propertiesPanel h3 {
+
+    margin-top: 0;
+    margin-bottom: 15px;
+
+}
+
+
+#propertiesPanel label {
+
+    display: grid;
+
+    grid-template-columns: 70px 1fr;
+
+    align-items: center;
+
+    gap: 8px;
+
+    margin-bottom: 8px;
+
+}
+
+
+#propertiesPanel input {
+
+    width: 100%;
+
+    box-sizing: border-box;
+
+    padding: 5px;
+
+    background: #333;
+
+    color: white;
+
+    border: 1px solid #666;
+
+    border-radius: 4px;
+
+}
+
+
+#propertiesPanel button {
+
+    width: 100%;
+
+    margin-top: 8px;
+
+    padding: 7px;
+
+    cursor: pointer;
+
+}
