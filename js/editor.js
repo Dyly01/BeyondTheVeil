@@ -1,4 +1,7 @@
-// canvas setup
+// ============================================================
+// CANVAS SETUP
+// ============================================================
+
 const canvas =
     document.getElementById("editorCanvas");
 
@@ -15,7 +18,7 @@ function resizeCanvas() {
         window.innerHeight;
 }
 
-// resize canvas when window is resized
+
 window.addEventListener(
     "resize",
     resizeCanvas
@@ -24,7 +27,11 @@ window.addEventListener(
 
 resizeCanvas();
 
-// editor world setup
+
+// ============================================================
+// EDITOR WORLD
+// ============================================================
+
 const editorWorld = {
 
     width: 3000,
@@ -33,7 +40,11 @@ const editorWorld = {
 
 };
 
-// camera setup
+
+// ============================================================
+// CAMERA
+// ============================================================
+
 const camera = {
 
     x: 0,
@@ -46,20 +57,55 @@ const camera = {
 
 };
 
+
+// ============================================================
+// GRID
+// ============================================================
+
+const GRID_SIZE = 25;
+
+
+// ============================================================
+// LEVEL DATA
+// ============================================================
+
+let level = null;
+
+let platforms = [];
+
+let spawn = {
+
+    x: 0,
+
+    y: 0
+
+};
+
+
+// ============================================================
+// HISTORY
+// ============================================================
+
 const history = [];
 
 let historyIndex = -1;
+
 
 function createEditorSnapshot() {
 
     return JSON.parse(
         JSON.stringify({
+
             platforms,
+
             spawn,
+
             level
+
         })
     );
 }
+
 
 function saveHistoryState() {
 
@@ -78,6 +124,7 @@ function saveHistoryState() {
     historyIndex =
         history.length - 1;
 }
+
 
 function restoreHistoryState(snapshot) {
 
@@ -112,20 +159,52 @@ function restoreHistoryState(snapshot) {
         level.height;
 
 
-    selectedPlatform = null;
+    clearSelection();
 
-    resizingHandle = null;
 
-    isDragging = false;
+    resizingHandle =
+        null;
+
+    isDragging =
+        false;
+
+    originalPlatforms =
+        [];
 
 
     updatePropertiesPanel();
+
 
     canvas.style.cursor =
         "default";
 }
 
+
+function undo() {
+
+    if (
+        historyIndex <= 0
+    ) {
+
+        return;
+    }
+
+
+    historyIndex--;
+
+
+    restoreHistoryState(
+        history[historyIndex]
+    );
+}
+
+
+// ============================================================
+// EDITOR KEYBOARD
+// ============================================================
+
 const editorKeys = {};
+
 
 document.addEventListener(
     "keydown",
@@ -141,51 +220,64 @@ document.addEventListener(
 
 
         if (isTyping) {
+
             return;
         }
 
 
-        // Delete
+        // ----------------------------------------------------
+        // DELETE
+        // ----------------------------------------------------
 
         if (
             event.key === "Delete" &&
-            selectedPlatform
+            selectedPlatforms.length > 0
         ) {
 
-            deleteSelectedPlatform();
+            deleteSelectedPlatforms();
 
             return;
         }
 
 
-        // Undo
+        // ----------------------------------------------------
+        // UNDO
+        // ----------------------------------------------------
 
         if (
             event.ctrlKey &&
             event.key.toLowerCase() === "z"
         ) {
 
+            event.preventDefault();
+
             undo();
 
+            return;
+        }
+
+
+        // ----------------------------------------------------
+        // SELECT ALL
+        // ----------------------------------------------------
+
+        if (
+            event.ctrlKey &&
+            event.key.toLowerCase() === "a"
+        ) {
+
+            event.preventDefault();
+
+            selectAllPlatforms();
+
+            updatePropertiesPanel();
+
+            return;
         }
 
     }
 );
 
-function undo() {
-
-    if (historyIndex <= 0) {
-        return;
-    }
-
-
-    historyIndex--;
-
-
-    restoreHistoryState(
-        history[historyIndex]
-    );
-}
 
 document.addEventListener(
     "keydown",
@@ -206,43 +298,10 @@ document.addEventListener(
     }
 );
 
-function deleteSelectedPlatform() {
 
-    if (!selectedPlatform) {
-        return;
-    }
-
-
-    const index =
-        platforms.indexOf(
-            selectedPlatform
-        );
-
-
-    if (index === -1) {
-        return;
-    }
-
-
-    platforms.splice(
-        index,
-        1
-    );
-
-
-    selectedPlatform = null;
-
-    resizingHandle = null;
-
-    isDragging = false;
-
-
-    updatePropertiesPanel();
-
-    canvas.style.cursor = "default";
-
-    saveHistoryState();
-}
+// ============================================================
+// CAMERA MOVEMENT
+// ============================================================
 
 function updateCamera(deltaTime) {
 
@@ -305,71 +364,197 @@ function updateCamera(deltaTime) {
         camera.zoom;
 
 
-    // Keep camera inside world
-
     const maxX =
-        editorWorld.width -
-        canvas.width / camera.zoom;
+        Math.max(
+            0,
+            editorWorld.width -
+            canvas.width /
+            camera.zoom
+        );
 
 
     const maxY =
-        editorWorld.height -
-        canvas.height / camera.zoom;
+        Math.max(
+            0,
+            editorWorld.height -
+            canvas.height /
+            camera.zoom
+        );
 
 
     camera.x =
         Math.max(
             0,
-            Math.min(camera.x, maxX)
+            Math.min(
+                camera.x,
+                maxX
+            )
         );
 
 
     camera.y =
         Math.max(
             0,
-            Math.min(camera.y, maxY)
+            Math.min(
+                camera.y,
+                maxY
+            )
         );
+}
+
+
+// ============================================================
+// SELECTION
+// ============================================================
+
+let selectedPlatforms = [];
+
+
+function clearSelection() {
+
+    selectedPlatforms = [];
 
 }
 
-// grid setup
-const GRID_SIZE = 25;
 
-// current tool setup
-let isDragging = false;
+function selectPlatform(platform) {
 
-let dragStart = null;
+    selectedPlatforms = [
+        platform
+    ];
 
-let dragCurrent = null;
+}
 
-let currentTool = "platform";
 
-let selectedPlatform = null;
+function togglePlatformSelection(platform) {
 
-let resizingHandle = null;
+    const index =
+        selectedPlatforms.indexOf(
+            platform
+        );
 
-let dragOffsetX = 0;
-let dragOffsetY = 0;
 
-let originalPlatform = null;
+    if (
+        index === -1
+    ) {
+
+        selectedPlatforms.push(
+            platform
+        );
+
+    }
+    else {
+
+        selectedPlatforms.splice(
+            index,
+            1
+        );
+
+    }
+
+}
+
+
+function selectAllPlatforms() {
+
+    selectedPlatforms =
+        [...platforms];
+
+}
+
+
+function isPlatformSelected(platform) {
+
+    return selectedPlatforms.includes(
+        platform
+    );
+
+}
+
+
+// ============================================================
+// DRAG / RESIZE STATE
+// ============================================================
+
+let isDragging =
+    false;
+
+
+let dragStart =
+    null;
+
+
+let dragCurrent =
+    null;
+
+
+let currentTool =
+    "platform";
+
+
+// Resize handle
+
+let resizingHandle =
+    null;
+
+
+// Original state of selected platforms
+// while moving or resizing
+
+let originalPlatforms =
+    [];
+
+
+// ============================================================
+// TOOLS
+// ============================================================
 
 document
     .getElementById("platformTool")
-    .addEventListener("click", () => {
+    .addEventListener(
+        "click",
+        () => {
 
-        currentTool = "platform";
+            currentTool =
+                "platform";
 
-    });
+        }
+    );
+
 
 document
     .getElementById("eraseTool")
-    .addEventListener("click", () => {
+    .addEventListener(
+        "click",
+        () => {
 
-        currentTool = "erase";
+            currentTool =
+                "erase";
 
-        selectedPlatform = null;
+            clearSelection();
 
-    });
+            updatePropertiesPanel();
+
+        }
+    );
+
+
+document
+    .getElementById("spawnTool")
+    .addEventListener(
+        "click",
+        () => {
+
+            currentTool =
+                "spawn";
+
+            clearSelection();
+
+            updatePropertiesPanel();
+
+        }
+    );
+
 
 document
     .getElementById("saveButton")
@@ -378,22 +563,25 @@ document
         saveLevel
     );
 
-document
-    .getElementById("spawnTool")
-    .addEventListener("click", () => {
 
-        currentTool = "spawn";
+// ============================================================
+// PLATFORM LOOKUP
+// ============================================================
 
-        selectedPlatform = null;
+function getPlatformAtPosition(
+    x,
+    y
+) {
 
-    });
+    for (
+        let i = platforms.length - 1;
+        i >= 0;
+        i--
+    ) {
 
-// get platform at position
-function getPlatformAtPosition(x, y) {
+        const platform =
+            platforms[i];
 
-    for (let i = platforms.length - 1; i >= 0; i--) {
-
-        const platform = platforms[i];
 
         if (
             x >= platform.x &&
@@ -403,23 +591,35 @@ function getPlatformAtPosition(x, y) {
         ) {
 
             return platform;
+
         }
+
     }
+
 
     return null;
 }
 
-// convert screen coordinates to world coordinates
-function screenToWorld(mouseX, mouseY) {
+
+// ============================================================
+// SCREEN → WORLD
+// ============================================================
+
+function screenToWorld(
+    mouseX,
+    mouseY
+) {
 
     return {
 
         x:
-            mouseX / camera.zoom +
+            mouseX /
+            camera.zoom +
             camera.x,
 
         y:
-            mouseY / camera.zoom +
+            mouseY /
+            camera.zoom +
             camera.y
 
     };
@@ -427,24 +627,47 @@ function screenToWorld(mouseX, mouseY) {
 }
 
 
+// ============================================================
+// SNAP TO GRID
+// ============================================================
 
-// Mouse Movement
+function snapToGrid(value) {
 
-function getResizeHandle(x, y, platform) {
+    return Math.round(
+        value / GRID_SIZE
+    ) * GRID_SIZE;
 
-    const handleSize = 10;
+}
+
+
+// ============================================================
+// RESIZE HANDLES
+// ============================================================
+
+function getResizeHandle(
+    x,
+    y,
+    platform
+) {
+
+    const handleSize =
+        10;
+
 
     const screenX =
         (platform.x - camera.x) *
         camera.zoom;
 
+
     const screenY =
         (platform.y - camera.y) *
         camera.zoom;
 
+
     const screenWidth =
         platform.width *
         camera.zoom;
+
 
     const screenHeight =
         platform.height *
@@ -454,103 +677,222 @@ function getResizeHandle(x, y, platform) {
     const handles = {
 
         topLeft: {
+
             x: screenX,
+
             y: screenY
+
         },
 
         topRight: {
-            x: screenX + screenWidth,
-            y: screenY
+
+            x:
+                screenX +
+                screenWidth,
+
+            y:
+                screenY
+
         },
 
         bottomLeft: {
-            x: screenX,
-            y: screenY + screenHeight
+
+            x:
+                screenX,
+
+            y:
+                screenY +
+                screenHeight
+
         },
 
         bottomRight: {
-            x: screenX + screenWidth,
-            y: screenY + screenHeight
+
+            x:
+                screenX +
+                screenWidth,
+
+            y:
+                screenY +
+                screenHeight
+
         }
 
     };
 
 
-    for (const [name, handle] of Object.entries(handles)) {
+    for (
+        const [name, handle]
+        of Object.entries(handles)
+    ) {
 
         if (
-            Math.abs(x - handle.x) <= handleSize &&
-            Math.abs(y - handle.y) <= handleSize
+            Math.abs(
+                x - handle.x
+            ) <= handleSize &&
+            Math.abs(
+                y - handle.y
+            ) <= handleSize
         ) {
 
             return name;
 
         }
+
     }
 
 
     return null;
 }
 
-function updateCursor(mouseX, mouseY) {
 
-    // No selected platform
-    if (!selectedPlatform) {
+// ============================================================
+// DELETE SELECTED PLATFORMS
+// ============================================================
 
-        canvas.style.cursor = "default";
+function deleteSelectedPlatforms() {
+
+    if (
+        selectedPlatforms.length === 0
+    ) {
 
         return;
     }
 
 
-    // Check resize handles
+    const deletedPlatforms =
+        [...selectedPlatforms];
 
-    const handle =
-        getResizeHandle(
-            mouseX,
-            mouseY,
-            selectedPlatform
+
+    platforms =
+        platforms.filter(
+            platform =>
+                !deletedPlatforms.includes(
+                    platform
+                )
         );
 
 
-    if (handle === "topLeft") {
+    clearSelection();
+
+
+    resizingHandle =
+        null;
+
+
+    originalPlatforms =
+        [];
+
+
+    isDragging =
+        false;
+
+
+    updatePropertiesPanel();
+
+
+    canvas.style.cursor =
+        "default";
+
+
+    saveHistoryState();
+
+}
+
+
+// ============================================================
+// CURSOR
+// ============================================================
+
+function updateCursor(
+    mouseX,
+    mouseY
+) {
+
+    if (
+        selectedPlatforms.length === 0
+    ) {
 
         canvas.style.cursor =
-            "nwse-resize";
+            "default";
 
         return;
     }
 
 
-    if (handle === "topRight") {
+    // --------------------------------------------------------
+    // Resize handles
+    // --------------------------------------------------------
 
-        canvas.style.cursor =
-            "nesw-resize";
+    if (
+        selectedPlatforms.length === 1
+    ) {
 
-        return;
+        const platform =
+            selectedPlatforms[0];
+
+
+        const handle =
+            getResizeHandle(
+                mouseX,
+                mouseY,
+                platform
+            );
+
+
+        if (
+            handle === "topLeft"
+        ) {
+
+            canvas.style.cursor =
+                "nwse-resize";
+
+            return;
+
+        }
+
+
+        if (
+            handle === "topRight"
+        ) {
+
+            canvas.style.cursor =
+                "nesw-resize";
+
+            return;
+
+        }
+
+
+        if (
+            handle === "bottomLeft"
+        ) {
+
+            canvas.style.cursor =
+                "nesw-resize";
+
+            return;
+
+        }
+
+
+        if (
+            handle === "bottomRight"
+        ) {
+
+            canvas.style.cursor =
+                "nwse-resize";
+
+            return;
+
+        }
+
     }
 
 
-    if (handle === "bottomLeft") {
-
-        canvas.style.cursor =
-            "nesw-resize";
-
-        return;
-    }
-
-
-    if (handle === "bottomRight") {
-
-        canvas.style.cursor =
-            "nwse-resize";
-
-        return;
-    }
-
-
-    // Check whether mouse is
-    // inside the selected platform
+    // --------------------------------------------------------
+    // Check selected platforms
+    // --------------------------------------------------------
 
     const worldPosition =
         screenToWorld(
@@ -560,20 +902,41 @@ function updateCursor(mouseX, mouseY) {
 
 
     if (
-        getPlatformAtPosition(
-            worldPosition.x,
-            worldPosition.y
-        ) === selectedPlatform
+        selectedPlatforms.some(
+            platform =>
+
+                worldPosition.x >=
+                    platform.x &&
+
+                worldPosition.x <=
+                    platform.x +
+                    platform.width &&
+
+                worldPosition.y >=
+                    platform.y &&
+
+                worldPosition.y <=
+                    platform.y +
+                    platform.height
+        )
     ) {
 
-        canvas.style.cursor = "grab";
+        canvas.style.cursor =
+            "grab";
 
         return;
+
     }
 
 
-    canvas.style.cursor = "default";
+    canvas.style.cursor =
+        "default";
 }
+
+
+// ============================================================
+// MOUSE DOWN
+// ============================================================
 
 canvas.addEventListener(
     "mousedown",
@@ -584,8 +947,15 @@ canvas.addEventListener(
                 event.offsetX,
                 event.offsetY
             );
-        
-        if (currentTool === "spawn") {
+
+
+        // ====================================================
+        // SPAWN TOOL
+        // ====================================================
+
+        if (
+            currentTool === "spawn"
+        ) {
 
             spawn.x =
                 snapToGrid(
@@ -603,8 +973,13 @@ canvas.addEventListener(
         }
 
 
+        // ====================================================
+        // ERASE TOOL
+        // ====================================================
 
-        if (currentTool === "erase") {
+        if (
+            currentTool === "erase"
+        ) {
 
             const platform =
                 getPlatformAtPosition(
@@ -616,12 +991,22 @@ canvas.addEventListener(
             if (platform) {
 
                 const index =
-                    platforms.indexOf(platform);
+                    platforms.indexOf(
+                        platform
+                    );
 
 
-                if (index !== -1) {
+                if (
+                    index !== -1
+                ) {
 
-                    platforms.splice(index, 1);
+                    platforms.splice(
+                        index,
+                        1
+                    );
+
+
+                    saveHistoryState();
 
                 }
 
@@ -631,47 +1016,67 @@ canvas.addEventListener(
             return;
         }
 
-        if (selectedPlatform && currentTool === "platform") {
+
+        // ====================================================
+        // RESIZE SELECTED PLATFORM
+        // ====================================================
+
+        if (
+            selectedPlatforms.length === 1 &&
+            currentTool === "platform"
+        ) {
+
+            const platform =
+                selectedPlatforms[0];
+
 
             const handle =
                 getResizeHandle(
                     event.offsetX,
                     event.offsetY,
-                    selectedPlatform
+                    platform
                 );
 
 
             if (handle) {
 
-                resizingHandle = handle;
-
-                isDragging = true;
-
-                dragStart =
-                    screenToWorld(
-                        event.offsetX,
-                        event.offsetY
-                    );
+                resizingHandle =
+                    handle;
 
 
-                originalPlatform = {
+                isDragging =
+                    true;
 
-                    x: selectedPlatform.x,
 
-                    y: selectedPlatform.y,
+                originalPlatforms = [
+                    {
 
-                    width: selectedPlatform.width,
+                        platform,
 
-                    height: selectedPlatform.height
+                        x:
+                            platform.x,
 
-                };
+                        y:
+                            platform.y,
+
+                        width:
+                            platform.width,
+
+                        height:
+                            platform.height
+
+                    }
+                ];
+
 
                 return;
             }
         }
 
 
-        // Check if we clicked a platform
+        // ====================================================
+        // CHECK PLATFORM CLICK
+        // ====================================================
 
         const platform =
             getPlatformAtPosition(
@@ -682,94 +1087,200 @@ canvas.addEventListener(
 
         if (platform) {
 
-            selectedPlatform = platform;
+            // ------------------------------------------------
+            // CTRL + CLICK
+            // ------------------------------------------------
+
+            if (
+                event.ctrlKey
+            ) {
+
+                togglePlatformSelection(
+                    platform
+                );
+
+
+                updatePropertiesPanel();
+
+
+                return;
+            }
+
+
+            // ------------------------------------------------
+            // NORMAL CLICK
+            // ------------------------------------------------
+
+            // If the platform is not already
+            // selected, replace the selection.
+
+            if (
+                !isPlatformSelected(
+                    platform
+                )
+            ) {
+
+                selectPlatform(
+                    platform
+                );
+
+            }
+
 
             updatePropertiesPanel();
 
-            canvas.style.cursor = "grabbing";
 
-            // Remember where inside the platform
-            // we clicked.
+            // ------------------------------------------------
+            // START MOVEMENT
+            // ------------------------------------------------
 
-            dragOffsetX =
-                worldPosition.x -
-                platform.x;
+            if (
+                selectedPlatforms.length > 0
+            ) {
 
-            dragOffsetY =
-                worldPosition.y -
-                platform.y;
+                dragStart =
+                    {
 
+                        x:
+                            worldPosition.x,
 
-            // Remember original platform position.
+                        y:
+                            worldPosition.y
 
-            originalPlatform = {
-
-                x: platform.x,
-
-                y: platform.y,
-
-                width: platform.width,
-
-                height: platform.height
-
-            };
+                    };
 
 
-            isDragging = true;
+                // Store original positions
+                // of ALL selected platforms.
+
+                originalPlatforms =
+                    selectedPlatforms.map(
+                        selected => ({
+
+                            platform:
+                                selected,
+
+                            x:
+                                selected.x,
+
+                            y:
+                                selected.y
+
+                        })
+                    );
+
+
+                isDragging =
+                    true;
+
+
+                canvas.style.cursor =
+                    "grabbing";
+
+            }
+
 
             return;
         }
 
 
-        // Otherwise create a new platform
+        // ====================================================
+        // CLICKED EMPTY SPACE
+        // ====================================================
 
-        if (currentTool !== "platform") {
+        if (
+            currentTool !== "platform"
+        ) {
+
             return;
         }
 
-        
-        selectedPlatform = null;
+
+        clearSelection();
+
 
         updatePropertiesPanel();
 
 
         dragStart = {
 
-            x: snapToGrid(worldPosition.x),
+            x:
+                snapToGrid(
+                    worldPosition.x
+                ),
 
-            y: snapToGrid(worldPosition.y)
+            y:
+                snapToGrid(
+                    worldPosition.y
+                )
 
         };
 
 
-        dragCurrent = dragStart;
+        dragCurrent =
+            {
 
-        isDragging = true;
+                x:
+                    dragStart.x,
+
+                y:
+                    dragStart.y
+
+            };
+
+
+        isDragging =
+            true;
 
     }
 );
 
+
+// ============================================================
+// PROPERTIES PANEL
+// ============================================================
+
 const propertiesPanel =
-    document.getElementById("propertiesPanel");
+    document.getElementById(
+        "propertiesPanel"
+    );
+
 
 const propertyX =
-    document.getElementById("propertyX");
+    document.getElementById(
+        "propertyX"
+    );
+
 
 const propertyY =
-    document.getElementById("propertyY");
+    document.getElementById(
+        "propertyY"
+    );
+
 
 const propertyWidth =
-    document.getElementById("propertyWidth");
+    document.getElementById(
+        "propertyWidth"
+    );
+
 
 const propertyHeight =
-    document.getElementById("propertyHeight");
+    document.getElementById(
+        "propertyHeight"
+    );
+
 
 const applyProperties =
-    document.getElementById("applyProperties");
+    document.getElementById(
+        "applyProperties"
+    );
+
 
 function updatePropertiesPanel() {
 
-    if (!selectedPlatform) {
+    if (
+        selectedPlatforms.length !== 1
+    ) {
 
         propertiesPanel.style.display =
             "none";
@@ -778,31 +1289,164 @@ function updatePropertiesPanel() {
     }
 
 
+    const platform =
+        selectedPlatforms[0];
+
+
     propertiesPanel.style.display =
         "block";
 
 
     propertyX.value =
-        selectedPlatform.x;
+        platform.x;
+
 
     propertyY.value =
-        selectedPlatform.y;
+        platform.y;
+
 
     propertyWidth.value =
-        selectedPlatform.width;
+        platform.width;
+
 
     propertyHeight.value =
-        selectedPlatform.height;
+        platform.height;
+
 }
+
+
+// ============================================================
+// APPLY MANUAL PROPERTIES
+// ============================================================
+
+function applyPropertyChanges() {
+
+    if (
+        selectedPlatforms.length !== 1
+    ) {
+
+        return;
+    }
+
+
+    const platform =
+        selectedPlatforms[0];
+
+
+    const x =
+        Number(
+            propertyX.value
+        );
+
+
+    const y =
+        Number(
+            propertyY.value
+        );
+
+
+    const width =
+        Number(
+            propertyWidth.value
+        );
+
+
+    const height =
+        Number(
+            propertyHeight.value
+        );
+
+
+    if (
+        !Number.isFinite(x) ||
+        !Number.isFinite(y) ||
+        !Number.isFinite(width) ||
+        !Number.isFinite(height)
+    ) {
+
+        return;
+    }
+
+
+    const oldState = {
+
+        x:
+            platform.x,
+
+        y:
+            platform.y,
+
+        width:
+            platform.width,
+
+        height:
+            platform.height
+
+    };
+
+
+    platform.x =
+        snapToGrid(
+            x
+        );
+
+
+    platform.y =
+        snapToGrid(
+            y
+        );
+
+
+    platform.width =
+        Math.max(
+            GRID_SIZE,
+            snapToGrid(
+                width
+            )
+        );
+
+
+    platform.height =
+        Math.max(
+            GRID_SIZE,
+            snapToGrid(
+                height
+            )
+        );
+
+
+    const changed =
+        platform.x !== oldState.x ||
+        platform.y !== oldState.y ||
+        platform.width !== oldState.width ||
+        platform.height !== oldState.height;
+
+
+    if (changed) {
+
+        saveHistoryState();
+
+    }
+
+
+    updatePropertiesPanel();
+
+}
+
+
+applyProperties.addEventListener(
+    "click",
+    applyPropertyChanges
+);
+
+
+// ============================================================
+// MOUSE MOVE
+// ============================================================
 
 canvas.addEventListener(
     "mousemove",
     (event) => {
-
-        if (!isDragging) {
-            return;
-        }
-
 
         const worldPosition =
             screenToWorld(
@@ -811,52 +1455,96 @@ canvas.addEventListener(
             );
 
 
-        // --------------------------------
-        // Resize platform
-        // --------------------------------
+        // ====================================================
+        // NOTHING IS BEING DRAGGED
+        // ====================================================
+
+        if (!isDragging) {
+
+            updateCursor(
+                event.offsetX,
+                event.offsetY
+            );
+
+
+            return;
+        }
+
+
+        // ====================================================
+        // RESIZE
+        // ====================================================
 
         if (
-            selectedPlatform &&
+            selectedPlatforms.length === 1 &&
             resizingHandle
         ) {
 
             const platform =
-                selectedPlatform;
+                selectedPlatforms[0];
+
+
+            const mouseX =
+                snapToGrid(
+                    worldPosition.x
+                );
+
+
+            const mouseY =
+                snapToGrid(
+                    worldPosition.y
+                );
+
+
+            const right =
+                originalPlatforms[0].x +
+                originalPlatforms[0].width;
+
+
+            const bottom =
+                originalPlatforms[0].y +
+                originalPlatforms[0].height;
 
 
             if (
                 resizingHandle === "topLeft"
             ) {
 
-                const right =
-                    platform.x +
-                    platform.width;
-
-                const bottom =
-                    platform.y +
-                    platform.height;
+                const newWidth =
+                    right -
+                    mouseX;
 
 
-                const newX =
-                    snapToGrid(
-                        worldPosition.x
-                    );
-
-                const newY =
-                    snapToGrid(
-                        worldPosition.y
-                    );
+                const newHeight =
+                    bottom -
+                    mouseY;
 
 
-                platform.x = newX;
-                platform.y = newY;
+                if (
+                    newWidth >= GRID_SIZE
+                ) {
+
+                    platform.x =
+                        mouseX;
+
+                    platform.width =
+                        newWidth;
+
+                }
 
 
-                platform.width =
-                    right - newX;
+                if (
+                    newHeight >= GRID_SIZE
+                ) {
 
-                platform.height =
-                    bottom - newY;
+                    platform.y =
+                        mouseY;
+
+                    platform.height =
+                        newHeight;
+
+                }
+
             }
 
 
@@ -864,31 +1552,38 @@ canvas.addEventListener(
                 resizingHandle === "topRight"
             ) {
 
-                const bottom =
-                    platform.y +
-                    platform.height;
+                const newWidth =
+                    mouseX -
+                    originalPlatforms[0].x;
 
 
-                const newY =
-                    snapToGrid(
-                        worldPosition.y
-                    );
-
-
-                platform.y =
-                    newY;
-
-
-                platform.width =
-                    snapToGrid(
-                        worldPosition.x
-                    ) -
-                    platform.x;
-
-
-                platform.height =
+                const newHeight =
                     bottom -
-                    newY;
+                    mouseY;
+
+
+                if (
+                    newWidth >= GRID_SIZE
+                ) {
+
+                    platform.width =
+                        newWidth;
+
+                }
+
+
+                if (
+                    newHeight >= GRID_SIZE
+                ) {
+
+                    platform.y =
+                        mouseY;
+
+                    platform.height =
+                        newHeight;
+
+                }
+
             }
 
 
@@ -896,31 +1591,38 @@ canvas.addEventListener(
                 resizingHandle === "bottomLeft"
             ) {
 
-                const right =
-                    platform.x +
-                    platform.width;
-
-
-                const newX =
-                    snapToGrid(
-                        worldPosition.x
-                    );
-
-
-                platform.x =
-                    newX;
-
-
-                platform.width =
+                const newWidth =
                     right -
-                    newX;
+                    mouseX;
 
 
-                platform.height =
-                    snapToGrid(
-                        worldPosition.y
-                    ) -
-                    platform.y;
+                const newHeight =
+                    mouseY -
+                    originalPlatforms[0].y;
+
+
+                if (
+                    newWidth >= GRID_SIZE
+                ) {
+
+                    platform.x =
+                        mouseX;
+
+                    platform.width =
+                        newWidth;
+
+                }
+
+
+                if (
+                    newHeight >= GRID_SIZE
+                ) {
+
+                    platform.height =
+                        newHeight;
+
+                }
+
             }
 
 
@@ -928,224 +1630,265 @@ canvas.addEventListener(
                 resizingHandle === "bottomRight"
             ) {
 
-                platform.width =
-                    snapToGrid(
-                        worldPosition.x
-                    ) -
-                    platform.x;
+                const newWidth =
+                    mouseX -
+                    originalPlatforms[0].x;
 
 
-                platform.height =
-                    snapToGrid(
-                        worldPosition.y
-                    ) -
-                    platform.y;
+                const newHeight =
+                    mouseY -
+                    originalPlatforms[0].y;
+
+
+                if (
+                    newWidth >= GRID_SIZE
+                ) {
+
+                    platform.width =
+                        newWidth;
+
+                }
+
+
+                if (
+                    newHeight >= GRID_SIZE
+                ) {
+
+                    platform.height =
+                        newHeight;
+
+                }
+
             }
 
+
             updatePropertiesPanel();
+
 
             return;
         }
 
 
-        // --------------------------------
-        // Move platform
-        // --------------------------------
+        // ====================================================
+        // MOVE SELECTED PLATFORMS
+        // ====================================================
 
-        if (selectedPlatform) {
+        if (
+            selectedPlatforms.length > 0 &&
+            originalPlatforms.length > 0
+        ) {
 
-            selectedPlatform.x =
+            const deltaX =
                 snapToGrid(
                     worldPosition.x -
-                    dragOffsetX
+                    dragStart.x
                 );
 
 
-            selectedPlatform.y =
+            const deltaY =
                 snapToGrid(
                     worldPosition.y -
-                    dragOffsetY
+                    dragStart.y
                 );
 
+
+            for (
+                const original
+                of originalPlatforms
+            ) {
+
+                original.platform.x =
+                    original.x +
+                    deltaX;
+
+
+                original.platform.y =
+                    original.y +
+                    deltaY;
+
+            }
+
+
             updatePropertiesPanel();
+
 
             return;
         }
 
 
-        // --------------------------------
-        // Create platform preview
-        // --------------------------------
+        // ====================================================
+        // CREATE PLATFORM PREVIEW
+        // ====================================================
 
         dragCurrent = {
 
-            x: snapToGrid(
-                worldPosition.x
-            ),
+            x:
+                snapToGrid(
+                    worldPosition.x
+                ),
 
-            y: snapToGrid(
-                worldPosition.y
-            )
+            y:
+                snapToGrid(
+                    worldPosition.y
+                )
 
         };
 
     }
 );
 
-canvas.addEventListener(
-    "mousemove",
-    (event) => {
 
-        if (isDragging) {
-            return;
-        }
-
-
-        updateCursor(
-            event.offsetX,
-            event.offsetY
-        );
-
-    }
-);
-
-canvas.addEventListener(
-    "wheel",
-    (event) => {
-
-        event.preventDefault();
-
-
-        const oldZoom =
-            camera.zoom;
-
-
-        if (event.deltaY < 0) {
-
-            camera.zoom *= 1.1;
-
-        }
-        else {
-
-            camera.zoom /= 1.1;
-
-        }
-
-
-        camera.zoom =
-            Math.max(
-                0.25,
-                Math.min(
-                    camera.zoom,
-                    3
-                )
-            );
-
-
-        // Keep the point under
-        // the mouse stationary
-
-        const mouseX =
-            event.offsetX;
-
-        const mouseY =
-            event.offsetY;
-
-
-        const worldX =
-            mouseX / oldZoom +
-            camera.x;
-
-        const worldY =
-            mouseY / oldZoom +
-            camera.y;
-
-
-        camera.x =
-            worldX -
-            mouseX / camera.zoom;
-
-        camera.y =
-            worldY -
-            mouseY / camera.zoom;
-
-    },
-    {
-        passive: false
-    }
-);
+// ============================================================
+// MOUSE UP
+// ============================================================
 
 canvas.addEventListener(
     "mouseup",
     () => {
 
-        canvas.style.cursor = "default";
-
-        if (resizingHandle) {
-
-            isDragging = false;
-
-            const changed =
-                originalPlatform &&
-                (
-                    selectedPlatform.x !== originalPlatform.x ||
-                    selectedPlatform.y !== originalPlatform.y ||
-                    selectedPlatform.width !== originalPlatform.width ||
-                    selectedPlatform.height !== originalPlatform.height
-                );
+        canvas.style.cursor =
+            "default";
 
 
-            if (changed) {
+        if (
+            !isDragging
+        ) {
+
+            return;
+        }
+
+
+        // ====================================================
+        // RESIZE FINISHED
+        // ====================================================
+
+        if (
+            resizingHandle
+        ) {
+
+            let changed =
+                false;
+
+
+            if (
+                originalPlatforms.length > 0
+            ) {
+
+                const original =
+                    originalPlatforms[0];
+
+
+                const platform =
+                    original.platform;
+
+
+                changed =
+                    platform.x !== original.x ||
+                    platform.y !== original.y ||
+                    platform.width !== original.width ||
+                    platform.height !== original.height;
+
+            }
+
+
+            if (
+                changed
+            ) {
 
                 saveHistoryState();
 
             }
 
 
-        resizingHandle = null;
+            resizingHandle =
+                null;
 
-        originalPlatform = null;
 
-        return;
-    }
+            originalPlatforms =
+                [];
 
-        if (!isDragging) {
+
+            isDragging =
+                false;
+
+
             return;
         }
 
 
-        // If we were moving a platform
+        // ====================================================
+        // MOVEMENT FINISHED
+        // ====================================================
 
-        if (selectedPlatform) {
+        if (
+            selectedPlatforms.length > 0 &&
+            originalPlatforms.length > 0
+        ) {
 
-            isDragging = false;
-
-            // Check whether the platform was actually changed
-
-            const changed =
-                originalPlatform &&
-                (
-                    selectedPlatform.x !== originalPlatform.x ||
-                    selectedPlatform.y !== originalPlatform.y ||
-                    selectedPlatform.width !== originalPlatform.width ||
-                    selectedPlatform.height !== originalPlatform.height
-                );
+            let changed =
+                false;
 
 
-            if (changed) {
+            for (
+                const original
+                of originalPlatforms
+            ) {
+
+                const platform =
+                    original.platform;
+
+
+                if (
+                    platform.x !== original.x ||
+                    platform.y !== original.y
+                ) {
+
+                    changed =
+                        true;
+
+                    break;
+
+                }
+
+            }
+
+
+            if (
+                changed
+            ) {
 
                 saveHistoryState();
 
             }
 
 
-            originalPlatform = null;
+            originalPlatforms =
+                [];
+
+
+            isDragging =
+                false;
+
 
             return;
         }
 
 
-        // Otherwise create a new platform
+        // ====================================================
+        // CREATE PLATFORM
+        // ====================================================
+
+        if (
+            !dragStart ||
+            !dragCurrent
+        ) {
+
+            isDragging =
+                false;
+
+            return;
+        }
+
 
         const x =
             Math.min(
@@ -1175,176 +1918,274 @@ canvas.addEventListener(
             );
 
 
-        if (width > 0 && height > 0) {
+        if (
+            width > 0 &&
+            height > 0
+        ) {
 
             platforms.push({
 
                 x,
+
                 y,
+
                 width,
+
                 height
 
             });
-        
+
+
             saveHistoryState();
 
         }
 
 
-        isDragging = false;
+        isDragging =
+            false;
+
+
+        dragStart =
+            null;
+
+
+        dragCurrent =
+            null;
 
     }
 );
 
-// snap value to grid
-function snapToGrid(value) {
 
-    return Math.round(
-        value / GRID_SIZE
-    ) * GRID_SIZE;
-}
+// ============================================================
+// WHEEL / ZOOM
+// ============================================================
 
-// draw grid
+canvas.addEventListener(
+    "wheel",
+    (event) => {
+
+        event.preventDefault();
+
+
+        const oldZoom =
+            camera.zoom;
+
+
+        if (
+            event.deltaY < 0
+        ) {
+
+            camera.zoom *=
+                1.1;
+
+        }
+        else {
+
+            camera.zoom /=
+                1.1;
+
+        }
+
+
+        camera.zoom =
+            Math.max(
+                0.25,
+                Math.min(
+                    camera.zoom,
+                    3
+                )
+            );
+
+
+        const mouseX =
+            event.offsetX;
+
+
+        const mouseY =
+            event.offsetY;
+
+
+        const worldX =
+            mouseX /
+            oldZoom +
+            camera.x;
+
+
+        const worldY =
+            mouseY /
+            oldZoom +
+            camera.y;
+
+
+        camera.x =
+            worldX -
+            mouseX /
+            camera.zoom;
+
+
+        camera.y =
+            worldY -
+            mouseY /
+            camera.zoom;
+
+    },
+    {
+        passive: false
+    }
+);
+
+
+// ============================================================
+// GRID DRAWING
+// ============================================================
+
 function drawGrid() {
 
-    ctx.strokeStyle = "#444";
-    ctx.lineWidth = 1;
+    ctx.strokeStyle =
+        "#444";
+
+
+    ctx.lineWidth =
+        1;
 
 
     const startX =
         Math.floor(
-            camera.x / GRID_SIZE
-        ) * GRID_SIZE;
+            camera.x /
+            GRID_SIZE
+        ) *
+        GRID_SIZE;
+
 
     const startY =
         Math.floor(
-            camera.y / GRID_SIZE
-        ) * GRID_SIZE;
+            camera.y /
+            GRID_SIZE
+        ) *
+        GRID_SIZE;
 
 
     for (
         let x = startX;
-        x < camera.x + canvas.width / camera.zoom;
+        x <
+            camera.x +
+            canvas.width /
+            camera.zoom;
         x += GRID_SIZE
     ) {
 
         const screenX =
-            (x - camera.x) * camera.zoom;
+            (x - camera.x) *
+            camera.zoom;
 
 
         ctx.beginPath();
+
 
         ctx.moveTo(
             screenX,
             0
         );
 
+
         ctx.lineTo(
             screenX,
             canvas.height
         );
 
+
         ctx.stroke();
+
     }
 
 
     for (
         let y = startY;
-        y < camera.y + canvas.height / camera.zoom;
+        y <
+            camera.y +
+            canvas.height /
+            camera.zoom;
         y += GRID_SIZE
     ) {
 
         const screenY =
-            (y - camera.y) * camera.zoom;
+            (y - camera.y) *
+            camera.zoom;
 
 
         ctx.beginPath();
+
 
         ctx.moveTo(
             0,
             screenY
         );
 
+
         ctx.lineTo(
             canvas.width,
             screenY
         );
 
+
         ctx.stroke();
+
     }
+
 }
 
-// level loading
-let level = null;
 
-let platforms = [];
+// ============================================================
+// DRAW PLATFORMS
+// ============================================================
 
-let spawn = {
-    x: 0,
-    y: 0
-};
-
-// Load level from JSON file
-async function loadLevel() {
-
-    const response =
-        await fetch("./level.json");
-
-
-    level =
-        await response.json();
-
-
-    platforms =
-        level.platforms;
-
-
-    spawn =
-        level.spawn;
-
-
-    editorWorld.width =
-        level.width;
-
-
-    editorWorld.height =
-        level.height;
-
-
-    console.log(
-        "Editor level loaded:",
-        level
-    );
-}
-
-// draw platforms
 function drawPlatforms() {
 
-    ctx.fillStyle = "#888";
+    // --------------------------------------------------------
+    // Normal platforms
+    // --------------------------------------------------------
+
+    ctx.fillStyle =
+        "#888";
 
 
-    for (const platform of platforms) {
+    for (
+        const platform
+        of platforms
+    ) {
 
         ctx.fillRect(
 
-            (platform.x - camera.x) * camera.zoom,
+            (platform.x -
+                camera.x) *
+                camera.zoom,
 
-            (platform.y - camera.y) * camera.zoom,
+            (platform.y -
+                camera.y) *
+                camera.zoom,
 
-            platform.width * camera.zoom,
+            platform.width *
+                camera.zoom,
 
-            platform.height * camera.zoom
+            platform.height *
+                camera.zoom
 
         );
+
     }
 
 
-    // Draw platform preview
+    // --------------------------------------------------------
+    // CREATE PLATFORM PREVIEW
+    // --------------------------------------------------------
 
     if (
         isDragging &&
         currentTool === "platform" &&
-        selectedPlatform === null
+        selectedPlatforms.length === 0 &&
+        !resizingHandle &&
+        dragStart &&
+        dragCurrent
     ) {
 
         const x =
@@ -1381,41 +2222,63 @@ function drawPlatforms() {
 
         ctx.fillRect(
 
-            (x - camera.x) * camera.zoom,
+            (x -
+                camera.x) *
+                camera.zoom,
 
-            (y - camera.y) * camera.zoom,
+            (y -
+                camera.y) *
+                camera.zoom,
 
-            width * camera.zoom,
+            width *
+                camera.zoom,
 
-            height * camera.zoom
+            height *
+                camera.zoom
 
         );
+
     }
 
-    if (selectedPlatform) {
+
+    // --------------------------------------------------------
+    // SELECTION BORDERS
+    // --------------------------------------------------------
+
+    for (
+        const platform
+        of selectedPlatforms
+    ) {
 
         const x =
-            (selectedPlatform.x - camera.x) *
-            camera.zoom;
+            (platform.x -
+                camera.x) *
+                camera.zoom;
+
 
         const y =
-            (selectedPlatform.y - camera.y) *
-            camera.zoom;
+            (platform.y -
+                camera.y) *
+                camera.zoom;
+
 
         const width =
-            selectedPlatform.width *
+            platform.width *
             camera.zoom;
+
 
         const height =
-            selectedPlatform.height *
+            platform.height *
             camera.zoom;
 
 
-        // Selection rectangle
+        ctx.strokeStyle =
+            "yellow";
 
-        ctx.strokeStyle = "yellow";
 
-        ctx.lineWidth = 2;
+        ctx.lineWidth =
+            3;
+
 
         ctx.strokeRect(
             x,
@@ -1424,369 +2287,207 @@ function drawPlatforms() {
             height
         );
 
-
-        // Resize handles
-
-        const handleSize = 10;
+    }
 
 
-        ctx.fillStyle = "yellow";
+    // --------------------------------------------------------
+    // RESIZE HANDLES
+    // --------------------------------------------------------
+
+    if (
+        selectedPlatforms.length === 1
+    ) {
+
+        const platform =
+            selectedPlatforms[0];
+
+
+        const x =
+            (platform.x -
+                camera.x) *
+                camera.zoom;
+
+
+        const y =
+            (platform.y -
+                camera.y) *
+                camera.zoom;
+
+
+        const width =
+            platform.width *
+            camera.zoom;
+
+
+        const height =
+            platform.height *
+            camera.zoom;
+
+
+        const handleSize =
+            10;
+
+
+        ctx.fillStyle =
+            "yellow";
 
 
         // Top-left
 
         ctx.fillRect(
-            x - handleSize / 2,
-            y - handleSize / 2,
+
+            x -
+                handleSize / 2,
+
+            y -
+                handleSize / 2,
+
             handleSize,
+
             handleSize
+
         );
 
 
         // Top-right
 
         ctx.fillRect(
-            x + width - handleSize / 2,
-            y - handleSize / 2,
+
+            x +
+                width -
+                handleSize / 2,
+
+            y -
+                handleSize / 2,
+
             handleSize,
+
             handleSize
+
         );
 
 
         // Bottom-left
 
         ctx.fillRect(
-            x - handleSize / 2,
-            y + height - handleSize / 2,
+
+            x -
+                handleSize / 2,
+
+            y +
+                height -
+                handleSize / 2,
+
             handleSize,
+
             handleSize
+
         );
 
 
         // Bottom-right
 
         ctx.fillRect(
-            x + width - handleSize / 2,
-            y + height - handleSize / 2,
+
+            x +
+                width -
+                handleSize / 2,
+
+            y +
+                height -
+                handleSize / 2,
+
             handleSize,
+
             handleSize
-        );
-    }
-}
 
-function applyPropertyChanges() {
-
-    if (!selectedPlatform) {
-        return;
-    }
-
-
-    const x =
-        Number(propertyX.value);
-
-    const y =
-        Number(propertyY.value);
-
-    const width =
-        Number(propertyWidth.value);
-
-    const height =
-        Number(propertyHeight.value);
-
-
-    // Make sure the values are valid
-
-    if (
-        !Number.isFinite(x) ||
-        !Number.isFinite(y) ||
-        !Number.isFinite(width) ||
-        !Number.isFinite(height)
-    ) {
-
-        return;
-    }
-
-
-    // Apply values
-
-    selectedPlatform.x =
-        snapToGrid(x);
-
-    selectedPlatform.y =
-        snapToGrid(y);
-
-    selectedPlatform.width =
-        Math.max(
-            GRID_SIZE,
-            snapToGrid(width)
         );
 
-    selectedPlatform.height =
-        Math.max(
-            GRID_SIZE,
-            snapToGrid(height)
-        );
-    
-    saveHistoryState();
-
-    updatePropertiesPanel();
-}
-
-applyProperties.addEventListener(
-    "click",
-    applyPropertyChanges
-);
-
-// save level to JSON file
-function createLevelData() {
-
-    return {
-
-        name: level.name,
-
-        width: level.width,
-
-        height: level.height,
-
-        spawn: {
-            x: spawn.x,
-            y: spawn.y
-        },
-
-        platforms: platforms
-
-    };
-}
-
-function createJSON() {
-
-    const levelData =
-        createLevelData();
-
-
-    return JSON.stringify(
-        levelData,
-        null,
-        4
-    );
-}
-
-async function saveLevel() {
-
-    const json =
-        createJSON();
-
-    if ("showSaveFilePicker" in window) {
-
-        const handle =
-            await window.showSaveFilePicker({
-
-                suggestedName:
-                    "level.json",
-
-                types: [
-
-                    {
-                        description:
-                            "JSON Level",
-
-                        accept: {
-                            "application/json":
-                                [".json"]
-                        }
-
-                    }
-
-                ]
-
-            });
-
-
-        const writable =
-            await handle.createWritable();
-
-
-        await writable.write(json);
-
-
-        await writable.close();
-
-
-        console.log(
-            "Level saved successfully."
-        );
-
-
-        return;
     }
 
-    const blob =
-        new Blob(
-            [json],
-            {
-                type:
-                    "application/json"
-            }
-        );
-
-
-    const url =
-        URL.createObjectURL(blob);
-
-
-    const link =
-        document.createElement("a");
-
-
-    link.href = url;
-
-    link.download =
-        "level.json";
-
-
-    link.click();
-
-
-    URL.revokeObjectURL(url);
-
 }
 
-const loadButton =
-    document.getElementById("loadButton");
 
-const levelFileInput =
-    document.getElementById("levelFileInput");
-
-
-loadButton.addEventListener(
-    "click",
-    () => {
-
-        levelFileInput.click();
-
-    }
-);
-
-levelFileInput.addEventListener(
-    "change",
-    async (event) => {
-
-        const file =
-            event.target.files[0];
-
-
-        if (!file) {
-            return;
-        }
-
-
-        try {
-
-            const text =
-                await file.text();
-
-
-            const loadedLevel =
-                JSON.parse(text);
-
-
-            loadLevelData(loadedLevel);
-
-
-            console.log(
-                "Level loaded:",
-                loadedLevel
-            );
-
-        }
-        catch (error) {
-
-            console.error(
-                "Failed to load level:",
-                error
-            );
-
-            alert(
-                "The selected file is not a valid level JSON."
-            );
-
-        }
-
-    }
-);
-
-function loadLevelData(loadedLevel) {
-
-    level = loadedLevel;
-
-
-    platforms = level.platforms;
-
-
-    spawn = level.spawn;
-
-
-    editorWorld.width =
-        level.width;
-
-
-    editorWorld.height =
-        level.height;
-
-
-    selectedPlatform = null;
-
-    updatePropertiesPanel();
-
-    isDragging = false;
-
-
-    console.log(
-        "Editor updated with new level."
-    );
-}
+// ============================================================
+// SPAWN DRAWING
+// ============================================================
 
 function drawSpawn() {
 
     const x =
-        (spawn.x - camera.x) * camera.zoom;
+        (spawn.x -
+            camera.x) *
+            camera.zoom;
+
 
     const y =
-        (spawn.y - camera.y) * camera.zoom;
+        (spawn.y -
+            camera.y) *
+            camera.zoom;
 
 
-    ctx.fillStyle = "lime";
+    ctx.fillStyle =
+        "lime";
+
 
     ctx.fillRect(
+
         x,
+
         y,
-        40 * camera.zoom,
-        60 * camera.zoom
+
+        40 *
+            camera.zoom,
+
+        60 *
+            camera.zoom
+
     );
 
 
-    ctx.strokeStyle = "white";
+    ctx.strokeStyle =
+        "white";
 
-    ctx.lineWidth = 2;
+
+    ctx.lineWidth =
+        2;
+
 
     ctx.strokeRect(
+
         x,
+
         y,
-        40 * camera.zoom,
-        60 * camera.zoom
+
+        40 *
+            camera.zoom,
+
+        60 *
+            camera.zoom
+
     );
 
 
-    ctx.fillStyle = "white";
+    ctx.fillStyle =
+        "white";
 
-    ctx.font = "14px Arial";
+
+    ctx.font =
+        "14px Arial";
+
 
     ctx.fillText(
         "SPAWN",
         x,
         y - 8
     );
+
 }
+
+
+// ============================================================
+// DRAW
+// ============================================================
 
 function draw() {
 
@@ -1803,32 +2504,376 @@ function draw() {
     drawPlatforms();
 
     drawSpawn();
+
 }
 
 
-let lastTime = performance.now();
+// ============================================================
+// SAVE LEVEL
+// ============================================================
+
+function createLevelData() {
+
+    return {
+
+        name:
+            level.name,
+
+        width:
+            level.width,
+
+        height:
+            level.height,
+
+        spawn: {
+
+            x:
+                spawn.x,
+
+            y:
+                spawn.y
+
+        },
+
+        platforms
+
+    };
+
+}
 
 
-function gameLoop(currentTime) {
+function createJSON() {
 
-    const deltaTime =
-        Math.min(
-            (currentTime - lastTime) / 1000,
-            0.1
+    return JSON.stringify(
+
+        createLevelData(),
+
+        null,
+
+        4
+
+    );
+
+}
+
+
+async function saveLevel() {
+
+    const json =
+        createJSON();
+
+
+    if (
+        "showSaveFilePicker"
+        in window
+    ) {
+
+        const handle =
+            await window.showSaveFilePicker({
+
+                suggestedName:
+                    "level.json",
+
+                types: [
+
+                    {
+
+                        description:
+                            "JSON Level",
+
+                        accept: {
+
+                            "application/json":
+                                [".json"]
+
+                        }
+
+                    }
+
+                ]
+
+            });
+
+
+        const writable =
+            await handle.createWritable();
+
+
+        await writable.write(
+            json
         );
 
 
-    lastTime = currentTime;
+        await writable.close();
 
 
-    updateCamera(deltaTime);
+        console.log(
+            "Level saved successfully."
+        );
+
+
+        return;
+    }
+
+
+    const blob =
+        new Blob(
+
+            [json],
+
+            {
+
+                type:
+                    "application/json"
+
+            }
+
+        );
+
+
+    const url =
+        URL.createObjectURL(
+            blob
+        );
+
+
+    const link =
+        document.createElement(
+            "a"
+        );
+
+
+    link.href =
+        url;
+
+
+    link.download =
+        "level.json";
+
+
+    link.click();
+
+
+    URL.revokeObjectURL(
+        url
+    );
+
+}
+
+
+// ============================================================
+// LOAD LEVEL
+// ============================================================
+
+const loadButton =
+    document.getElementById(
+        "loadButton"
+    );
+
+
+const levelFileInput =
+    document.getElementById(
+        "levelFileInput"
+    );
+
+
+loadButton.addEventListener(
+    "click",
+    () => {
+
+        levelFileInput.click();
+
+    }
+);
+
+
+levelFileInput.addEventListener(
+    "change",
+    async (event) => {
+
+        const file =
+            event.target.files[0];
+
+
+        if (!file) {
+
+            return;
+
+        }
+
+
+        try {
+
+            const text =
+                await file.text();
+
+
+            const loadedLevel =
+                JSON.parse(
+                    text
+                );
+
+
+            loadLevelData(
+                loadedLevel
+            );
+
+
+            console.log(
+                "Level loaded:",
+                loadedLevel
+            );
+
+        }
+        catch (error) {
+
+            console.error(
+                "Failed to load level:",
+                error
+            );
+
+
+            alert(
+                "The selected file is not a valid level JSON."
+            );
+
+        }
+
+    }
+);
+
+
+async function loadLevel() {
+
+    const response =
+        await fetch(
+            "./level.json"
+        );
+
+
+    level =
+        await response.json();
+
+
+    platforms =
+        level.platforms;
+
+
+    spawn =
+        level.spawn;
+
+
+    editorWorld.width =
+        level.width;
+
+
+    editorWorld.height =
+        level.height;
+
+
+    console.log(
+        "Editor level loaded:",
+        level
+    );
+
+}
+
+
+function loadLevelData(
+    loadedLevel
+) {
+
+    level =
+        loadedLevel;
+
+
+    platforms =
+        level.platforms;
+
+
+    spawn =
+        level.spawn;
+
+
+    editorWorld.width =
+        level.width;
+
+
+    editorWorld.height =
+        level.height;
+
+
+    clearSelection();
+
+
+    resizingHandle =
+        null;
+
+
+    originalPlatforms =
+        [];
+
+
+    isDragging =
+        false;
+
+
+    updatePropertiesPanel();
+
+
+    console.log(
+        "Editor updated with new level."
+    );
+
+}
+
+
+// ============================================================
+// GAME LOOP
+// ============================================================
+
+let lastTime =
+    performance.now();
+
+
+function gameLoop(
+    currentTime
+) {
+
+    const deltaTime =
+        Math.min(
+
+            (currentTime -
+                lastTime) /
+                1000,
+
+            0.1
+
+        );
+
+
+    lastTime =
+        currentTime;
+
+
+    updateCamera(
+        deltaTime
+    );
+
 
     draw();
 
 
-    requestAnimationFrame(gameLoop);
+    requestAnimationFrame(
+        gameLoop
+    );
+
 }
 
+
+// ============================================================
+// START
+// ============================================================
 
 async function startEditor() {
 
@@ -1841,8 +2886,8 @@ async function startEditor() {
     requestAnimationFrame(
         gameLoop
     );
+
 }
 
 
 startEditor();
-
