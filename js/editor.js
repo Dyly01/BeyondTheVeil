@@ -198,6 +198,23 @@ function undo() {
     );
 }
 
+function redo() {
+
+    if (historyIndex >= history.length - 1) {
+
+        return;
+    }
+
+
+    historyIndex++;
+
+
+    restoreHistoryState(
+        history[historyIndex]
+    );
+
+}
+
 
 // ============================================================
 // EDITOR KEYBOARD
@@ -244,14 +261,26 @@ document.addEventListener(
         // UNDO
         // ----------------------------------------------------
 
-        if (
+       if (
             event.ctrlKey &&
-            event.key.toLowerCase() === "z"
+            event.key.toLowerCase() === "z" &&
+            !event.shiftKey
         ) {
 
-            event.preventDefault();
-
             undo();
+
+            return;
+        }
+
+        // ----------------------------------------------------
+        // REDO
+        // ----------------------------------------------------
+        if (
+            event.ctrlKey &&
+            event.key.toLowerCase() === "y"
+        ) {
+
+            redo();
 
             return;
         }
