@@ -40,9 +40,120 @@ const camera = {
 
     y: 0,
 
+    zoom: 1,
+
     speed: 500
 
 };
+
+const editorKeys = {};
+
+document.addEventListener(
+    "keydown",
+    (event) => {
+
+        editorKeys[event.key] = true;
+
+    }
+);
+
+
+document.addEventListener(
+    "keyup",
+    (event) => {
+
+        editorKeys[event.key] = false;
+
+    }
+);
+
+function updateCamera(deltaTime) {
+
+    let moveX = 0;
+
+    let moveY = 0;
+
+
+    if (
+        editorKeys["a"] ||
+        editorKeys["ArrowLeft"]
+    ) {
+
+        moveX -= 1;
+
+    }
+
+
+    if (
+        editorKeys["d"] ||
+        editorKeys["ArrowRight"]
+    ) {
+
+        moveX += 1;
+
+    }
+
+
+    if (
+        editorKeys["w"] ||
+        editorKeys["ArrowUp"]
+    ) {
+
+        moveY -= 1;
+
+    }
+
+
+    if (
+        editorKeys["s"] ||
+        editorKeys["ArrowDown"]
+    ) {
+
+        moveY += 1;
+
+    }
+
+
+    camera.x +=
+        moveX *
+        camera.speed *
+        deltaTime /
+        camera.zoom;
+
+
+    camera.y +=
+        moveY *
+        camera.speed *
+        deltaTime /
+        camera.zoom;
+
+
+    // Keep camera inside world
+
+    const maxX =
+        editorWorld.width -
+        canvas.width / camera.zoom;
+
+
+    const maxY =
+        editorWorld.height -
+        canvas.height / camera.zoom;
+
+
+    camera.x =
+        Math.max(
+            0,
+            Math.min(camera.x, maxX)
+        );
+
+
+    camera.y =
+        Math.max(
+            0,
+            Math.min(camera.y, maxY)
+        );
+
+}
 
 // grid setup
 const GRID_SIZE = 25;
@@ -57,6 +168,13 @@ let dragCurrent = null;
 let currentTool = "platform";
 
 let selectedPlatform = null;
+
+let resizingHandle = null;
+
+let dragOffsetX = 0;
+let dragOffsetY = 0;
+
+let originalPlatform = null;
 
 document
     .getElementById("platformTool")
@@ -82,6 +200,16 @@ document
         "click",
         saveLevel
     );
+
+document
+    .getElementById("spawnTool")
+    .addEventListener("click", () => {
+
+        currentTool = "spawn";
+
+        selectedPlatform = null;
+
+    });
 
 // get platform at position
 function getPlatformAtPosition(x, y) {
@@ -109,14 +237,84 @@ function screenToWorld(mouseX, mouseY) {
 
     return {
 
-        x: mouseX + camera.x,
+        x:
+            mouseX / camera.zoom +
+            camera.x,
 
-        y: mouseY + camera.y
+        y:
+            mouseY / camera.zoom +
+            camera.y
 
     };
+
 }
 
+
+
 // Mouse Movement
+
+function getResizeHandle(x, y, platform) {
+
+    const handleSize = 10;
+
+    const screenX =
+        (platform.x - camera.x) *
+        camera.zoom;
+
+    const screenY =
+        (platform.y - camera.y) *
+        camera.zoom;
+
+    const screenWidth =
+        platform.width *
+        camera.zoom;
+
+    const screenHeight =
+        platform.height *
+        camera.zoom;
+
+
+    const handles = {
+
+        topLeft: {
+            x: screenX,
+            y: screenY
+        },
+
+        topRight: {
+            x: screenX + screenWidth,
+            y: screenY
+        },
+
+        bottomLeft: {
+            x: screenX,
+            y: screenY + screenHeight
+        },
+
+        bottomRight: {
+            x: screenX + screenWidth,
+            y: screenY + screenHeight
+        }
+
+    };
+
+
+    for (const [name, handle] of Object.entries(handles)) {
+
+        if (
+            Math.abs(x - handle.x) <= handleSize &&
+            Math.abs(y - handle.y) <= handleSize
+        ) {
+
+            return name;
+
+        }
+    }
+
+
+    return null;
+}
+
 canvas.addEventListener(
     "mousedown",
     (event) => {
@@ -126,6 +324,24 @@ canvas.addEventListener(
                 event.offsetX,
                 event.offsetY
             );
+        
+        if (currentTool === "spawn") {
+
+            spawn.x =
+                snapToGrid(
+                    worldPosition.x
+                );
+
+
+            spawn.y =
+                snapToGrid(
+                    worldPosition.y
+                );
+
+
+            return;
+        }
+
 
 
         if (currentTool === "erase") {
@@ -155,6 +371,32 @@ canvas.addEventListener(
             return;
         }
 
+        if (selectedPlatform && currentTool === "platform") {
+
+            const handle =
+                getResizeHandle(
+                    event.offsetX,
+                    event.offsetY,
+                    selectedPlatform
+                );
+
+
+            if (handle) {
+
+                resizingHandle = handle;
+
+                isDragging = true;
+
+                dragStart =
+                    screenToWorld(
+                        event.offsetX,
+                        event.offsetY
+                    );
+
+                return;
+            }
+        }
+
 
         // Check if we clicked a platform
 
@@ -169,15 +411,33 @@ canvas.addEventListener(
 
             selectedPlatform = platform;
 
-            dragStart = {
 
-                x: worldPosition.x,
+            // Remember where inside the platform
+            // we clicked.
 
-                y: worldPosition.y
+            dragOffsetX =
+                worldPosition.x -
+                platform.x;
+
+            dragOffsetY =
+                worldPosition.y -
+                platform.y;
+
+
+            // Remember original platform position.
+
+            originalPlatform = {
+
+                x: platform.x,
+
+                y: platform.y,
+
+                width: platform.width,
+
+                height: platform.height
 
             };
 
-            dragCurrent = dragStart;
 
             isDragging = true;
 
@@ -190,6 +450,9 @@ canvas.addEventListener(
         if (currentTool !== "platform") {
             return;
         }
+
+        
+        selectedPlatform = null;
 
 
         dragStart = {
@@ -224,48 +487,179 @@ canvas.addEventListener(
             );
 
 
-        dragCurrent = worldPosition;
+        // --------------------------------
+        // Resize platform
+        // --------------------------------
+
+        if (
+            selectedPlatform &&
+            resizingHandle
+        ) {
+
+            const platform =
+                selectedPlatform;
 
 
-        // Move existing platform
+            if (
+                resizingHandle === "topLeft"
+            ) {
 
-        if (selectedPlatform) {
+                const right =
+                    platform.x +
+                    platform.width;
 
-            const deltaX =
-                dragCurrent.x -
-                dragStart.x;
-
-
-            const deltaY =
-                dragCurrent.y -
-                dragStart.y;
-
-
-            selectedPlatform.x =
-                snapToGrid(
-                    selectedPlatform.x + deltaX
-                );
+                const bottom =
+                    platform.y +
+                    platform.height;
 
 
-            selectedPlatform.y =
-                snapToGrid(
-                    selectedPlatform.y + deltaY
-                );
+                const newX =
+                    snapToGrid(
+                        worldPosition.x
+                    );
+
+                const newY =
+                    snapToGrid(
+                        worldPosition.y
+                    );
 
 
-            dragStart = dragCurrent;
+                platform.x = newX;
+                platform.y = newY;
+
+
+                platform.width =
+                    right - newX;
+
+                platform.height =
+                    bottom - newY;
+            }
+
+
+            else if (
+                resizingHandle === "topRight"
+            ) {
+
+                const bottom =
+                    platform.y +
+                    platform.height;
+
+
+                const newY =
+                    snapToGrid(
+                        worldPosition.y
+                    );
+
+
+                platform.y =
+                    newY;
+
+
+                platform.width =
+                    snapToGrid(
+                        worldPosition.x
+                    ) -
+                    platform.x;
+
+
+                platform.height =
+                    bottom -
+                    newY;
+            }
+
+
+            else if (
+                resizingHandle === "bottomLeft"
+            ) {
+
+                const right =
+                    platform.x +
+                    platform.width;
+
+
+                const newX =
+                    snapToGrid(
+                        worldPosition.x
+                    );
+
+
+                platform.x =
+                    newX;
+
+
+                platform.width =
+                    right -
+                    newX;
+
+
+                platform.height =
+                    snapToGrid(
+                        worldPosition.y
+                    ) -
+                    platform.y;
+            }
+
+
+            else if (
+                resizingHandle === "bottomRight"
+            ) {
+
+                platform.width =
+                    snapToGrid(
+                        worldPosition.x
+                    ) -
+                    platform.x;
+
+
+                platform.height =
+                    snapToGrid(
+                        worldPosition.y
+                    ) -
+                    platform.y;
+            }
+
 
             return;
         }
 
 
-        // Otherwise update new platform preview
+        // --------------------------------
+        // Move platform
+        // --------------------------------
+
+        if (selectedPlatform) {
+
+            selectedPlatform.x =
+                snapToGrid(
+                    worldPosition.x -
+                    dragOffsetX
+                );
+
+
+            selectedPlatform.y =
+                snapToGrid(
+                    worldPosition.y -
+                    dragOffsetY
+                );
+
+
+            return;
+        }
+
+
+        // --------------------------------
+        // Create platform preview
+        // --------------------------------
 
         dragCurrent = {
 
-            x: snapToGrid(worldPosition.x),
+            x: snapToGrid(
+                worldPosition.x
+            ),
 
-            y: snapToGrid(worldPosition.y)
+            y: snapToGrid(
+                worldPosition.y
+            )
 
         };
 
@@ -273,8 +667,85 @@ canvas.addEventListener(
 );
 
 canvas.addEventListener(
+    "wheel",
+    (event) => {
+
+        event.preventDefault();
+
+
+        const oldZoom =
+            camera.zoom;
+
+
+        if (event.deltaY < 0) {
+
+            camera.zoom *= 1.1;
+
+        }
+        else {
+
+            camera.zoom /= 1.1;
+
+        }
+
+
+        camera.zoom =
+            Math.max(
+                0.25,
+                Math.min(
+                    camera.zoom,
+                    3
+                )
+            );
+
+
+        // Keep the point under
+        // the mouse stationary
+
+        const mouseX =
+            event.offsetX;
+
+        const mouseY =
+            event.offsetY;
+
+
+        const worldX =
+            mouseX / oldZoom +
+            camera.x;
+
+        const worldY =
+            mouseY / oldZoom +
+            camera.y;
+
+
+        camera.x =
+            worldX -
+            mouseX / camera.zoom;
+
+        camera.y =
+            worldY -
+            mouseY / camera.zoom;
+
+    },
+    {
+        passive: false
+    }
+);
+
+canvas.addEventListener(
     "mouseup",
     () => {
+
+        if (resizingHandle) {
+
+            resizingHandle = null;
+
+            isDragging = false;
+
+            originalPlatform = null;
+
+            return;
+        }
 
         if (!isDragging) {
             return;
@@ -285,9 +756,9 @@ canvas.addEventListener(
 
         if (selectedPlatform) {
 
-            selectedPlatform = null;
-
             isDragging = false;
+
+            originalPlatform = null;
 
             return;
         }
@@ -354,7 +825,6 @@ function snapToGrid(value) {
 function drawGrid() {
 
     ctx.strokeStyle = "#444";
-
     ctx.lineWidth = 1;
 
 
@@ -371,19 +841,23 @@ function drawGrid() {
 
     for (
         let x = startX;
-        x < camera.x + canvas.width;
+        x < camera.x + canvas.width / camera.zoom;
         x += GRID_SIZE
     ) {
+
+        const screenX =
+            (x - camera.x) * camera.zoom;
+
 
         ctx.beginPath();
 
         ctx.moveTo(
-            x - camera.x,
+            screenX,
             0
         );
 
         ctx.lineTo(
-            x - camera.x,
+            screenX,
             canvas.height
         );
 
@@ -393,20 +867,24 @@ function drawGrid() {
 
     for (
         let y = startY;
-        y < camera.y + canvas.height;
+        y < camera.y + canvas.height / camera.zoom;
         y += GRID_SIZE
     ) {
+
+        const screenY =
+            (y - camera.y) * camera.zoom;
+
 
         ctx.beginPath();
 
         ctx.moveTo(
             0,
-            y - camera.y
+            screenY
         );
 
         ctx.lineTo(
             canvas.width,
-            y - camera.y
+            screenY
         );
 
         ctx.stroke();
@@ -466,13 +944,13 @@ function drawPlatforms() {
 
         ctx.fillRect(
 
-            platform.x - camera.x,
+            (platform.x - camera.x) * camera.zoom,
 
-            platform.y - camera.y,
+            (platform.y - camera.y) * camera.zoom,
 
-            platform.width,
+            platform.width * camera.zoom,
 
-            platform.height
+            platform.height * camera.zoom
 
         );
     }
@@ -482,7 +960,8 @@ function drawPlatforms() {
 
     if (
         isDragging &&
-        currentTool === "platform"
+        currentTool === "platform" &&
+        selectedPlatform === null
     ) {
 
         const x =
@@ -519,34 +998,95 @@ function drawPlatforms() {
 
         ctx.fillRect(
 
-            x - camera.x,
+            (x - camera.x) * camera.zoom,
 
-            y - camera.y,
+            (y - camera.y) * camera.zoom,
 
-            width,
+            width * camera.zoom,
 
-            height
+            height * camera.zoom
 
         );
     }
 
     if (selectedPlatform) {
 
+        const x =
+            (selectedPlatform.x - camera.x) *
+            camera.zoom;
+
+        const y =
+            (selectedPlatform.y - camera.y) *
+            camera.zoom;
+
+        const width =
+            selectedPlatform.width *
+            camera.zoom;
+
+        const height =
+            selectedPlatform.height *
+            camera.zoom;
+
+
+        // Selection rectangle
+
         ctx.strokeStyle = "yellow";
 
-        ctx.lineWidth = 3;
-
+        ctx.lineWidth = 2;
 
         ctx.strokeRect(
+            x,
+            y,
+            width,
+            height
+        );
 
-            selectedPlatform.x - camera.x,
 
-            selectedPlatform.y - camera.y,
+        // Resize handles
 
-            selectedPlatform.width,
+        const handleSize = 10;
 
-            selectedPlatform.height
 
+        ctx.fillStyle = "yellow";
+
+
+        // Top-left
+
+        ctx.fillRect(
+            x - handleSize / 2,
+            y - handleSize / 2,
+            handleSize,
+            handleSize
+        );
+
+
+        // Top-right
+
+        ctx.fillRect(
+            x + width - handleSize / 2,
+            y - handleSize / 2,
+            handleSize,
+            handleSize
+        );
+
+
+        // Bottom-left
+
+        ctx.fillRect(
+            x - handleSize / 2,
+            y + height - handleSize / 2,
+            handleSize,
+            handleSize
+        );
+
+
+        // Bottom-right
+
+        ctx.fillRect(
+            x + width - handleSize / 2,
+            y + height - handleSize / 2,
+            handleSize,
+            handleSize
         );
     }
 }
@@ -634,7 +1174,6 @@ async function saveLevel() {
         return;
     }
 
-
     const blob =
         new Blob(
             [json],
@@ -666,21 +1205,138 @@ async function saveLevel() {
 
 }
 
+const loadButton =
+    document.getElementById("loadButton");
+
+const levelFileInput =
+    document.getElementById("levelFileInput");
+
+
+loadButton.addEventListener(
+    "click",
+    () => {
+
+        levelFileInput.click();
+
+    }
+);
+
+levelFileInput.addEventListener(
+    "change",
+    async (event) => {
+
+        const file =
+            event.target.files[0];
+
+
+        if (!file) {
+            return;
+        }
+
+
+        try {
+
+            const text =
+                await file.text();
+
+
+            const loadedLevel =
+                JSON.parse(text);
+
+
+            loadLevelData(loadedLevel);
+
+
+            console.log(
+                "Level loaded:",
+                loadedLevel
+            );
+
+        }
+        catch (error) {
+
+            console.error(
+                "Failed to load level:",
+                error
+            );
+
+            alert(
+                "The selected file is not a valid level JSON."
+            );
+
+        }
+
+    }
+);
+
+function loadLevelData(loadedLevel) {
+
+    level = loadedLevel;
+
+
+    platforms = level.platforms;
+
+
+    spawn = level.spawn;
+
+
+    editorWorld.width =
+        level.width;
+
+
+    editorWorld.height =
+        level.height;
+
+
+    selectedPlatform = null;
+
+    isDragging = false;
+
+
+    console.log(
+        "Editor updated with new level."
+    );
+}
+
 function drawSpawn() {
+
+    const x =
+        (spawn.x - camera.x) * camera.zoom;
+
+    const y =
+        (spawn.y - camera.y) * camera.zoom;
+
 
     ctx.fillStyle = "lime";
 
-
     ctx.fillRect(
+        x,
+        y,
+        40 * camera.zoom,
+        60 * camera.zoom
+    );
 
-        spawn.x - camera.x,
 
-        spawn.y - camera.y,
+    ctx.strokeStyle = "white";
 
-        40,
+    ctx.lineWidth = 2;
 
-        60
+    ctx.strokeRect(
+        x,
+        y,
+        40 * camera.zoom,
+        60 * camera.zoom
+    );
 
+
+    ctx.fillStyle = "white";
+
+    ctx.font = "14px Arial";
+
+    ctx.fillText(
+        "SPAWN",
+        x,
+        y - 8
     );
 }
 
@@ -702,9 +1358,25 @@ function draw() {
 }
 
 
-function gameLoop() {
+let lastTime = performance.now();
+
+
+function gameLoop(currentTime) {
+
+    const deltaTime =
+        Math.min(
+            (currentTime - lastTime) / 1000,
+            0.1
+        );
+
+
+    lastTime = currentTime;
+
+
+    updateCamera(deltaTime);
 
     draw();
+
 
     requestAnimationFrame(gameLoop);
 }
@@ -714,8 +1386,9 @@ async function startEditor() {
 
     await loadLevel();
 
-    gameLoop();
+    requestAnimationFrame(gameLoop);
 }
 
 
 startEditor();
+
