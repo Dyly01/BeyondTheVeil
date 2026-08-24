@@ -6,6 +6,14 @@
         "x": 500,
         "y": 25
     },
+    "background": "forest",
+    "door": {
+        "x": 900,
+        "y": 225,
+        "width": 60,
+        "height": 100,
+        "level": "./level-2.json"
+    },
     "platforms": [
         {
             "x": 0,
@@ -32,9 +40,9 @@
             "height": 30
         },
         {
-            "x": 400,
-            "y": 250,
-            "width": 225,
+            "x": 500,
+            "y": 275,
+            "width": 250,
             "height": 175
         },
         {

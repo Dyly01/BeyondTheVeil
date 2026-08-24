@@ -2,7 +2,8 @@ import {
     BACKGROUNDS,
     PLATFORM_STYLES,
     drawBackground,
-    drawPlatform
+    drawPlatform,
+    drawDoor
 } from "./graphics.js";
 
 
@@ -24,6 +25,7 @@ function resizeCanvas() {
 
     canvas.height =
         window.innerHeight;
+
 }
 
 
@@ -89,190 +91,7 @@ let spawn = {
 
 };
 
-
-// ============================================================
-// VISUAL DESIGN CONTROLS
-// ============================================================
-
-const levelSelect =
-    document.getElementById(
-        "levelSelect"
-    );
-
-
-const backgroundSelect =
-    document.getElementById(
-        "backgroundSelect"
-    );
-
-
-const platformStyleSelect =
-    document.getElementById(
-        "platformStyleSelect"
-    );
-
-
-const platformColorInput =
-    document.getElementById(
-        "platformColorInput"
-    );
-
-
-// Populate background selector
-
-for (
-    const [value, label]
-    of Object.entries(BACKGROUNDS)
-) {
-
-    backgroundSelect.add(
-        new Option(
-            label,
-            value
-        )
-    );
-
-}
-
-
-// Populate platform style selector
-
-for (
-    const [value, label]
-    of Object.entries(PLATFORM_STYLES)
-) {
-
-    platformStyleSelect.add(
-        new Option(
-            label,
-            value
-        )
-    );
-
-}
-
-
-// ============================================================
-// BACKGROUND SELECTION
-// ============================================================
-
-backgroundSelect.addEventListener(
-    "change",
-    () => {
-
-        if (!level) {
-
-            return;
-
-        }
-
-
-        level.background =
-            backgroundSelect.value;
-
-
-        saveHistoryState();
-
-    }
-);
-
-
-// ============================================================
-// PLATFORM DESIGN
-// ============================================================
-
-function applyPlatformDesign() {
-
-    if (
-        selectedPlatforms.length === 0
-    ) {
-
-        return;
-
-    }
-
-
-    let changed = false;
-
-
-    for (
-        const platform
-        of selectedPlatforms
-    ) {
-
-        const oldStyle =
-            platform.style || "stone";
-
-
-        const oldColor =
-            platform.color || "#737d81";
-
-
-        const newStyle =
-            platformStyleSelect.value;
-
-
-        const newColor =
-            platformColorInput.value;
-
-
-        if (
-            oldStyle !== newStyle ||
-            oldColor !== newColor
-        ) {
-
-            platform.style =
-                newStyle;
-
-            platform.color =
-                newColor;
-
-            changed = true;
-
-        }
-
-    }
-
-
-    if (changed) {
-
-        saveHistoryState();
-
-    }
-
-}
-
-
-platformStyleSelect.addEventListener(
-    "change",
-    applyPlatformDesign
-);
-
-
-platformColorInput.addEventListener(
-    "input",
-    applyPlatformDesign
-);
-
-
-// ============================================================
-// LEVEL SELECTOR
-// ============================================================
-
-levelSelect.addEventListener(
-    "change",
-    async () => {
-
-        const levelNumber =
-            levelSelect.value;
-
-
-        await loadLevelFromFile(
-            `./level-${levelNumber}.json`
-        );
-
-    }
-);
+let door = null;
 
 
 // ============================================================
@@ -293,6 +112,8 @@ function createEditorSnapshot() {
 
             spawn,
 
+            door,
+
             level
 
         })
@@ -302,8 +123,6 @@ function createEditorSnapshot() {
 
 
 function saveHistoryState() {
-
-    // Remove states after current state
 
     history.splice(
         historyIndex + 1
@@ -321,9 +140,7 @@ function saveHistoryState() {
 }
 
 
-function restoreHistoryState(
-    snapshot
-) {
+function restoreHistoryState(snapshot) {
 
     platforms =
         JSON.parse(
@@ -341,6 +158,14 @@ function restoreHistoryState(
         );
 
 
+    door =
+        JSON.parse(
+            JSON.stringify(
+                snapshot.door
+            )
+        );
+
+
     level =
         JSON.parse(
             JSON.stringify(
@@ -352,12 +177,8 @@ function restoreHistoryState(
     editorWorld.width =
         level.width;
 
-
     editorWorld.height =
         level.height;
-
-
-    updateVisualControls();
 
 
     clearSelection();
@@ -366,16 +187,17 @@ function restoreHistoryState(
     resizingHandle =
         null;
 
-
     isDragging =
         false;
-
 
     originalPlatforms =
         [];
 
 
     updatePropertiesPanel();
+
+
+    updateDoorControls();
 
 
     canvas.style.cursor =
@@ -408,8 +230,7 @@ function undo() {
 function redo() {
 
     if (
-        historyIndex >=
-        history.length - 1
+        historyIndex >= history.length - 1
     ) {
 
         return;
@@ -443,9 +264,12 @@ document.addEventListener(
 
 
         const isTyping =
-            activeElement.tagName === "INPUT" ||
-            activeElement.tagName === "TEXTAREA" ||
-            activeElement.tagName === "SELECT";
+            activeElement &&
+            (
+                activeElement.tagName === "INPUT" ||
+                activeElement.tagName === "TEXTAREA" ||
+                activeElement.tagName === "SELECT"
+            );
 
 
         if (isTyping) {
@@ -455,27 +279,47 @@ document.addEventListener(
         }
 
 
+        // ----------------------------------------------------
         // DELETE
+        // ----------------------------------------------------
 
         if (
-            event.key === "Delete" &&
-            selectedPlatforms.length > 0
+            event.key === "Delete"
         ) {
 
-            deleteSelectedPlatforms();
+            if (
+                selectedPlatforms.length > 0
+            ) {
 
-            return;
+                deleteSelectedPlatforms();
+
+                return;
+
+            }
+
+
+            if (selectedDoor) {
+
+                deleteDoor();
+
+                return;
+
+            }
 
         }
 
 
+        // ----------------------------------------------------
         // UNDO
+        // ----------------------------------------------------
 
         if (
             event.ctrlKey &&
             event.key.toLowerCase() === "z" &&
             !event.shiftKey
         ) {
+
+            event.preventDefault();
 
             undo();
 
@@ -484,12 +328,16 @@ document.addEventListener(
         }
 
 
+        // ----------------------------------------------------
         // REDO
+        // ----------------------------------------------------
 
         if (
             event.ctrlKey &&
             event.key.toLowerCase() === "y"
         ) {
+
+            event.preventDefault();
 
             redo();
 
@@ -498,7 +346,9 @@ document.addEventListener(
         }
 
 
+        // ----------------------------------------------------
         // SELECT ALL
+        // ----------------------------------------------------
 
         if (
             event.ctrlKey &&
@@ -507,9 +357,7 @@ document.addEventListener(
 
             event.preventDefault();
 
-
             selectAllPlatforms();
-
 
             updatePropertiesPanel();
 
@@ -545,9 +393,7 @@ document.addEventListener(
 // CAMERA MOVEMENT
 // ============================================================
 
-function updateCamera(
-    deltaTime
-) {
+function updateCamera(deltaTime) {
 
     let moveX = 0;
 
@@ -649,33 +495,35 @@ function updateCamera(
 
 
 // ============================================================
-// SELECTION
+// PLATFORM SELECTION
 // ============================================================
 
 let selectedPlatforms = [];
+
+let selectedDoor = false;
 
 
 function clearSelection() {
 
     selectedPlatforms = [];
 
+    selectedDoor = false;
+
 }
 
 
-function selectPlatform(
-    platform
-) {
+function selectPlatform(platform) {
 
     selectedPlatforms = [
         platform
     ];
 
+    selectedDoor = false;
+
 }
 
 
-function togglePlatformSelection(
-    platform
-) {
+function togglePlatformSelection(platform) {
 
     const index =
         selectedPlatforms.indexOf(
@@ -701,6 +549,9 @@ function togglePlatformSelection(
 
     }
 
+
+    selectedDoor = false;
+
 }
 
 
@@ -709,16 +560,59 @@ function selectAllPlatforms() {
     selectedPlatforms =
         [...platforms];
 
+    selectedDoor = false;
+
 }
 
 
-function isPlatformSelected(
-    platform
-) {
+function isPlatformSelected(platform) {
 
     return selectedPlatforms.includes(
         platform
     );
+
+}
+
+
+// ============================================================
+// DOOR SELECTION
+// ============================================================
+
+function selectDoor() {
+
+    if (!door) {
+
+        return;
+
+    }
+
+
+    selectedDoor = true;
+
+    selectedPlatforms = [];
+
+
+    updateDoorControls();
+
+}
+
+
+function deleteDoor() {
+
+    if (!door) {
+
+        return;
+
+    }
+
+
+    door = null;
+
+    selectedDoor = false;
+
+    updateDoorControls();
+
+    saveHistoryState();
 
 }
 
@@ -752,7 +646,7 @@ let originalPlatforms =
 
 
 // ============================================================
-// TOOLS
+// BASIC TOOLS
 // ============================================================
 
 document
@@ -763,6 +657,14 @@ document
 
             currentTool =
                 "platform";
+
+            selectedDoor =
+                false;
+
+            canvas.style.cursor =
+                "default";
+
+            updatePropertiesPanel();
 
         }
     );
@@ -777,11 +679,11 @@ document
             currentTool =
                 "erase";
 
-
             clearSelection();
 
-
             updatePropertiesPanel();
+
+            updateDoorControls();
 
         }
     );
@@ -796,11 +698,11 @@ document
             currentTool =
                 "spawn";
 
-
             clearSelection();
 
-
             updatePropertiesPanel();
+
+            updateDoorControls();
 
         }
     );
@@ -812,6 +714,370 @@ document
         "click",
         saveLevel
     );
+
+
+// ============================================================
+// GRAPHICS CONTROLS
+// ============================================================
+
+const toolbar =
+    document.getElementById("toolbar");
+
+
+const backgroundSelect =
+    document.getElementById(
+        "backgroundSelect"
+    );
+
+
+const platformStyleSelect =
+    document.getElementById(
+        "platformStyleSelect"
+    );
+
+
+const platformColorInput =
+    document.getElementById(
+        "platformColorInput"
+    );
+
+
+if (backgroundSelect) {
+
+    for (
+        const [value, label]
+        of Object.entries(BACKGROUNDS)
+    ) {
+
+        backgroundSelect.add(
+            new Option(
+                label,
+                value
+            )
+        );
+
+    }
+
+}
+
+
+if (platformStyleSelect) {
+
+    for (
+        const [value, label]
+        of Object.entries(PLATFORM_STYLES)
+    ) {
+
+        platformStyleSelect.add(
+            new Option(
+                label,
+                value
+            )
+        );
+
+    }
+
+}
+
+
+if (backgroundSelect) {
+
+    backgroundSelect.addEventListener(
+        "change",
+        () => {
+
+            if (level) {
+
+                level.background =
+                    backgroundSelect.value;
+
+            }
+
+        }
+    );
+
+}
+
+
+function applyPlatformDesign() {
+
+    if (
+        selectedPlatforms.length !== 1
+    ) {
+
+        return;
+
+    }
+
+
+    const platform =
+        selectedPlatforms[0];
+
+
+    if (platformStyleSelect) {
+
+        platform.style =
+            platformStyleSelect.value;
+
+    }
+
+
+    if (platformColorInput) {
+
+        platform.color =
+            platformColorInput.value;
+
+    }
+
+}
+
+
+if (platformStyleSelect) {
+
+    platformStyleSelect.addEventListener(
+        "change",
+        applyPlatformDesign
+    );
+
+}
+
+
+if (platformColorInput) {
+
+    platformColorInput.addEventListener(
+        "input",
+        applyPlatformDesign
+    );
+
+}
+
+
+// ============================================================
+// DOOR TOOL / CONTROLS
+// ============================================================
+
+// Create the door tool if it does not already exist.
+
+let doorTool =
+    document.getElementById(
+        "doorTool"
+    );
+
+
+if (!doorTool) {
+
+    doorTool =
+        document.createElement(
+            "button"
+        );
+
+    doorTool.id =
+        "doorTool";
+
+    doorTool.textContent =
+        "Door";
+
+    toolbar.appendChild(
+        doorTool
+    );
+
+}
+
+
+doorTool.addEventListener(
+    "click",
+    () => {
+
+        currentTool =
+            "door";
+
+        clearSelection();
+
+        updatePropertiesPanel();
+
+        updateDoorControls();
+
+        canvas.style.cursor =
+            "crosshair";
+
+    }
+);
+
+
+// ============================================================
+// LEVEL TARGET SELECTOR
+// ============================================================
+
+let doorLevelContainer =
+    document.getElementById(
+        "doorLevelContainer"
+    );
+
+
+if (!doorLevelContainer) {
+
+    doorLevelContainer =
+        document.createElement(
+            "label"
+        );
+
+    doorLevelContainer.id =
+        "doorLevelContainer";
+
+    doorLevelContainer.innerHTML =
+        "Next Level ";
+
+    toolbar.appendChild(
+        doorLevelContainer
+    );
+
+}
+
+
+let doorLevelSelect =
+    document.getElementById(
+        "doorLevelSelect"
+    );
+
+
+if (!doorLevelSelect) {
+
+    doorLevelSelect =
+        document.createElement(
+            "select"
+        );
+
+    doorLevelSelect.id =
+        "doorLevelSelect";
+
+    doorLevelContainer.appendChild(
+        doorLevelSelect
+    );
+
+}
+
+
+// We cannot know every level file automatically
+// from a browser-only editor.
+//
+// These are the standard level filenames.
+// Existing options can still be preserved.
+
+const defaultLevelFiles = [
+
+    "./level-1.json",
+    "./level-2.json",
+    "./level-3.json",
+    "./level-4.json",
+    "./level-5.json",
+    "./level-6.json",
+    "./level-7.json",
+    "./level-8.json",
+    "./level-9.json",
+    "./level-10.json"
+
+];
+
+
+function populateDoorLevelSelector() {
+
+    const currentValue =
+        doorLevelSelect.value;
+
+
+    doorLevelSelect.innerHTML = "";
+
+
+    for (
+        const file
+        of defaultLevelFiles
+    ) {
+
+        const option =
+            new Option(
+                file.replace(
+                    "./",
+                    ""
+                ),
+                file
+            );
+
+
+        doorLevelSelect.appendChild(
+            option
+        );
+
+    }
+
+
+    if (currentValue) {
+
+        doorLevelSelect.value =
+            currentValue;
+
+    }
+
+}
+
+
+populateDoorLevelSelector();
+
+
+// ============================================================
+// DOOR TARGET CHANGE
+// ============================================================
+
+doorLevelSelect.addEventListener(
+    "change",
+    () => {
+
+        if (
+            !door
+        ) {
+
+            return;
+
+        }
+
+
+        door.level =
+            doorLevelSelect.value;
+
+
+        saveHistoryState();
+
+    }
+);
+
+
+// ============================================================
+// UPDATE DOOR CONTROLS
+// ============================================================
+
+function updateDoorControls() {
+
+    if (!doorLevelContainer) {
+
+        return;
+
+    }
+
+
+    doorLevelContainer.style.display =
+        door || currentTool === "door"
+            ? "flex"
+            : "none";
+
+
+    if (door) {
+
+        doorLevelSelect.value =
+            door.level ||
+            "./level-2.json";
+
+    }
+
+}
 
 
 // ============================================================
@@ -853,6 +1119,39 @@ function getPlatformAtPosition(
 
 
 // ============================================================
+// DOOR LOOKUP
+// ============================================================
+
+function getDoorAtPosition(
+    x,
+    y
+) {
+
+    if (!door) {
+
+        return null;
+
+    }
+
+
+    if (
+        x >= door.x &&
+        x <= door.x + door.width &&
+        y >= door.y &&
+        y <= door.y + door.height
+    ) {
+
+        return door;
+
+    }
+
+
+    return null;
+
+}
+
+
+// ============================================================
 // SCREEN → WORLD
 // ============================================================
 
@@ -882,9 +1181,7 @@ function screenToWorld(
 // SNAP TO GRID
 // ============================================================
 
-function snapToGrid(
-    value
-) {
+function snapToGrid(value) {
 
     return Math.round(
         value / GRID_SIZE
@@ -943,13 +1240,15 @@ function getResizeHandle(
                 screenX +
                 screenWidth,
 
-            y: screenY
+            y:
+                screenY
 
         },
 
         bottomLeft: {
 
-            x: screenX,
+            x:
+                screenX,
 
             y:
                 screenY +
@@ -1061,6 +1360,34 @@ function updateCursor(
     mouseX,
     mouseY
 ) {
+
+    if (
+        selectedDoor
+    ) {
+
+        const worldPosition =
+            screenToWorld(
+                mouseX,
+                mouseY
+            );
+
+
+        if (
+            getDoorAtPosition(
+                worldPosition.x,
+                worldPosition.y
+            )
+        ) {
+
+            canvas.style.cursor =
+                "grab";
+
+            return;
+
+        }
+
+    }
+
 
     if (
         selectedPlatforms.length === 0
@@ -1224,12 +1551,126 @@ canvas.addEventListener(
 
 
         // ====================================================
+        // DOOR TOOL
+        // ====================================================
+
+        if (
+            currentTool === "door"
+        ) {
+
+            // If a door already exists,
+            // clicking it selects it.
+
+            if (
+                door &&
+                getDoorAtPosition(
+                    worldPosition.x,
+                    worldPosition.y
+                )
+            ) {
+
+                selectDoor();
+
+                dragStart = {
+
+                    x:
+                        worldPosition.x,
+
+                    y:
+                        worldPosition.y
+
+                };
+
+
+                isDragging =
+                    true;
+
+
+                return;
+
+            }
+
+
+            // Otherwise create a new door.
+
+            if (!door) {
+
+                const doorWidth =
+                    60;
+
+                const doorHeight =
+                    100;
+
+
+                door = {
+
+                    x:
+                        snapToGrid(
+                            worldPosition.x
+                        ),
+
+                    y:
+                        snapToGrid(
+                            worldPosition.y
+                        ),
+
+                    width:
+                        doorWidth,
+
+                    height:
+                        doorHeight,
+
+                    level:
+                        doorLevelSelect.value ||
+                        "./level-2.json"
+
+                };
+
+
+                selectedDoor =
+                    true;
+
+
+                updateDoorControls();
+
+
+                saveHistoryState();
+
+
+                return;
+
+            }
+
+
+            return;
+
+        }
+
+
+        // ====================================================
         // ERASE TOOL
         // ====================================================
 
         if (
             currentTool === "erase"
         ) {
+
+            // Check door first.
+
+            if (
+                door &&
+                getDoorAtPosition(
+                    worldPosition.x,
+                    worldPosition.y
+                )
+            ) {
+
+                deleteDoor();
+
+                return;
+
+            }
+
 
             const platform =
                 getPlatformAtPosition(
@@ -1261,6 +1702,44 @@ canvas.addEventListener(
                 }
 
             }
+
+
+            return;
+
+        }
+
+
+        // ====================================================
+        // SELECT DOOR
+        // ====================================================
+
+        if (
+            door &&
+            getDoorAtPosition(
+                worldPosition.x,
+                worldPosition.y
+            )
+        ) {
+
+            selectDoor();
+
+            dragStart = {
+
+                x:
+                    worldPosition.x,
+
+                y:
+                    worldPosition.y
+
+            };
+
+
+            isDragging =
+                true;
+
+
+            canvas.style.cursor =
+                "grabbing";
 
 
             return;
@@ -1550,19 +2029,25 @@ function updatePropertiesPanel() {
         platform.height;
 
 
-    platformStyleSelect.value =
-        platform.style || "stone";
+    if (platformStyleSelect) {
+
+        platformStyleSelect.value =
+            platform.style ||
+            "stone";
+
+    }
 
 
-    platformColorInput.value =
-        platform.color || "#737d81";
+    if (platformColorInput) {
+
+        platformColorInput.value =
+            platform.color ||
+            "#737d81";
+
+    }
 
 }
 
-
-// ============================================================
-// APPLY MANUAL PROPERTIES
-// ============================================================
 
 function applyPropertyChanges() {
 
@@ -1633,24 +2118,32 @@ function applyPropertyChanges() {
 
 
     platform.x =
-        snapToGrid(x);
+        snapToGrid(
+            x
+        );
 
 
     platform.y =
-        snapToGrid(y);
+        snapToGrid(
+            y
+        );
 
 
     platform.width =
         Math.max(
             GRID_SIZE,
-            snapToGrid(width)
+            snapToGrid(
+                width
+            )
         );
 
 
     platform.height =
         Math.max(
             GRID_SIZE,
-            snapToGrid(height)
+            snapToGrid(
+                height
+            )
         );
 
 
@@ -1708,7 +2201,54 @@ canvas.addEventListener(
 
 
         // ====================================================
-        // RESIZE
+        // MOVE DOOR
+        // ====================================================
+
+        if (
+            selectedDoor &&
+            door
+        ) {
+
+            const deltaX =
+                snapToGrid(
+                    worldPosition.x -
+                    dragStart.x
+                );
+
+
+            const deltaY =
+                snapToGrid(
+                    worldPosition.y -
+                    dragStart.y
+                );
+
+
+            door.x +=
+                deltaX;
+
+
+            door.y +=
+                deltaY;
+
+
+            dragStart = {
+
+                x:
+                    worldPosition.x,
+
+                y:
+                    worldPosition.y
+
+            };
+
+
+            return;
+
+        }
+
+
+        // ====================================================
+        // RESIZE PLATFORM
         // ====================================================
 
         if (
@@ -1998,6 +2538,24 @@ canvas.addEventListener(
 
 
         // ====================================================
+        // DOOR MOVEMENT FINISHED
+        // ====================================================
+
+        if (
+            selectedDoor
+        ) {
+
+            isDragging =
+                false;
+
+            saveHistoryState();
+
+            return;
+
+        }
+
+
+        // ====================================================
         // RESIZE FINISHED
         // ====================================================
 
@@ -2030,7 +2588,9 @@ canvas.addEventListener(
             }
 
 
-            if (changed) {
+            if (
+                changed
+            ) {
 
                 saveHistoryState();
 
@@ -2091,7 +2651,9 @@ canvas.addEventListener(
             }
 
 
-            if (changed) {
+            if (
+                changed
+            ) {
 
                 saveHistoryState();
 
@@ -2172,10 +2734,14 @@ canvas.addEventListener(
                 height,
 
                 style:
-                    platformStyleSelect.value,
+                    platformStyleSelect
+                        ? platformStyleSelect.value
+                        : "stone",
 
                 color:
-                    platformColorInput.value
+                    platformColorInput
+                        ? platformColorInput.value
+                        : "#737d81"
 
             });
 
@@ -2385,7 +2951,9 @@ function drawGrid() {
 
 function drawPlatforms() {
 
+    // --------------------------------------------------------
     // Normal platforms
+    // --------------------------------------------------------
 
     for (
         const platform
@@ -2418,9 +2986,9 @@ function drawPlatforms() {
     }
 
 
-    // ========================================================
+    // --------------------------------------------------------
     // CREATE PLATFORM PREVIEW
-    // ========================================================
+    // --------------------------------------------------------
 
     if (
         isDragging &&
@@ -2484,9 +3052,9 @@ function drawPlatforms() {
     }
 
 
-    // ========================================================
+    // --------------------------------------------------------
     // SELECTION BORDERS
-    // ========================================================
+    // --------------------------------------------------------
 
     for (
         const platform
@@ -2533,9 +3101,9 @@ function drawPlatforms() {
     }
 
 
-    // ========================================================
+    // --------------------------------------------------------
     // RESIZE HANDLES
-    // ========================================================
+    // --------------------------------------------------------
 
     if (
         selectedPlatforms.length === 1
@@ -2612,6 +3180,104 @@ function drawPlatforms() {
 
 
 // ============================================================
+// DRAW DOOR
+// ============================================================
+
+function drawEditorDoor() {
+
+    if (!door) {
+
+        return;
+
+    }
+
+
+    ctx.save();
+
+
+    ctx.translate(
+        -camera.x * camera.zoom,
+        -camera.y * camera.zoom
+    );
+
+
+    ctx.scale(
+        camera.zoom,
+        camera.zoom
+    );
+
+
+    drawDoor(
+        ctx,
+        door
+    );
+
+
+    ctx.restore();
+
+
+    // Selection border
+
+    if (selectedDoor) {
+
+        const x =
+            (door.x -
+                camera.x) *
+                camera.zoom;
+
+
+        const y =
+            (door.y -
+                camera.y) *
+                camera.zoom;
+
+
+        const width =
+            door.width *
+            camera.zoom;
+
+
+        const height =
+            door.height *
+            camera.zoom;
+
+
+        ctx.strokeStyle =
+            "yellow";
+
+
+        ctx.lineWidth =
+            3;
+
+
+        ctx.strokeRect(
+            x,
+            y,
+            width,
+            height
+        );
+
+
+        ctx.fillStyle =
+            "white";
+
+
+        ctx.font =
+            "14px Arial";
+
+
+        ctx.fillText(
+            door.level || "No target",
+            x,
+            y - 8
+        );
+
+    }
+
+}
+
+
+// ============================================================
 // SPAWN DRAWING
 // ============================================================
 
@@ -2676,7 +3342,7 @@ function drawSpawn() {
 
 
     ctx.font =
-        `${14 * camera.zoom}px Arial`;
+        "14px Arial";
 
 
     ctx.fillText(
@@ -2684,60 +3350,6 @@ function drawSpawn() {
         x,
         y - 8
     );
-
-}
-
-
-// ============================================================
-// VISUAL CONTROL UPDATE
-// ============================================================
-
-function updateVisualControls() {
-
-    if (!level) {
-
-        return;
-
-    }
-
-
-    level.background =
-        level.background ||
-        "forest";
-
-
-    backgroundSelect.value =
-        level.background;
-
-
-    if (
-        selectedPlatforms.length === 1
-    ) {
-
-        const platform =
-            selectedPlatforms[0];
-
-
-        platformStyleSelect.value =
-            platform.style ||
-            "stone";
-
-
-        platformColorInput.value =
-            platform.color ||
-            "#737d81";
-
-    }
-    else {
-
-        platformStyleSelect.value =
-            "stone";
-
-
-        platformColorInput.value =
-            "#737d81";
-
-    }
 
 }
 
@@ -2756,29 +3368,21 @@ function draw() {
     );
 
 
-    // Background is drawn in screen space
-
     drawBackground(
-
         ctx,
-
-        level?.background ||
-            "forest",
-
+        level?.background || "forest",
         editorWorld.width,
-
         editorWorld.height,
-
         camera.x,
-
         camera.y
-
     );
 
 
     drawGrid();
 
     drawPlatforms();
+
+    drawEditorDoor();
 
     drawSpawn();
 
@@ -2815,6 +3419,29 @@ function createLevelData() {
         background:
             level.background ||
             "forest",
+
+        door:
+            door
+                ? {
+
+                    x:
+                        door.x,
+
+                    y:
+                        door.y,
+
+                    width:
+                        door.width,
+
+                    height:
+                        door.height,
+
+                    level:
+                        door.level ||
+                        "./level-2.json"
+
+                }
+                : null,
 
         platforms
 
@@ -2853,7 +3480,7 @@ async function saveLevel() {
             await window.showSaveFilePicker({
 
                 suggestedName:
-                    `level-${levelSelect.value}.json`,
+                    "level.json",
 
                 types: [
 
@@ -2930,7 +3557,7 @@ async function saveLevel() {
 
 
     link.download =
-        `level-${levelSelect.value}.json`;
+        "level.json";
 
 
     link.click();
@@ -2944,66 +3571,7 @@ async function saveLevel() {
 
 
 // ============================================================
-// LOAD LEVEL FROM FILE
-// ============================================================
-
-async function loadLevelFromFile(
-    filePath
-) {
-
-    try {
-
-        const response =
-            await fetch(
-                filePath
-            );
-
-
-        if (!response.ok) {
-
-            throw new Error(
-                `Could not load ${filePath}`
-            );
-
-        }
-
-
-        const loadedLevel =
-            await response.json();
-
-
-        loadLevelData(
-            loadedLevel
-        );
-
-
-        saveHistoryState();
-
-
-        console.log(
-            "Level loaded:",
-            filePath
-        );
-
-    }
-    catch (error) {
-
-        console.error(
-            error
-        );
-
-
-        alert(
-            `Could not load ${filePath}.`
-        );
-
-    }
-
-}
-
-
-// ============================================================
-// LOAD LEVEL FROM FILE PICKER
+// LOAD LEVEL
 // ============================================================
 
 const loadButton =
@@ -3018,110 +3586,264 @@ const levelFileInput =
     );
 
 
-loadButton.addEventListener(
-    "click",
-    () => {
+if (loadButton && levelFileInput) {
 
-        levelFileInput.click();
+    loadButton.addEventListener(
+        "click",
+        () => {
 
-    }
-);
-
-
-levelFileInput.addEventListener(
-    "change",
-    async (event) => {
-
-        const file =
-            event.target.files[0];
-
-
-        if (!file) {
-
-            return;
+            levelFileInput.click();
 
         }
+    );
 
 
-        try {
+    levelFileInput.addEventListener(
+        "change",
+        async (event) => {
 
-            const text =
-                await file.text();
+            const file =
+                event.target.files[0];
 
 
-            const loadedLevel =
-                JSON.parse(
-                    text
+            if (!file) {
+
+                return;
+
+            }
+
+
+            try {
+
+                const text =
+                    await file.text();
+
+
+                const loadedLevel =
+                    JSON.parse(
+                        text
+                    );
+
+
+                loadLevelData(
+                    loadedLevel
                 );
 
 
-            loadLevelData(
-                loadedLevel
-            );
+                console.log(
+                    "Level loaded:",
+                    loadedLevel
+                );
+
+            }
+            catch (error) {
+
+                console.error(
+                    "Failed to load level:",
+                    error
+                );
 
 
-            console.log(
-                "Level loaded:",
-                loadedLevel
-            );
+                alert(
+                    "The selected file is not a valid level JSON."
+                );
 
-        }
-        catch (error) {
-
-            console.error(
-                "Failed to load level:",
-                error
-            );
-
-
-            alert(
-                "The selected file is not a valid level JSON."
-            );
+            }
 
         }
+    );
+
+}
+
+// ============================================================
+// MAIN LEVEL SELECTOR
+// ============================================================
+
+const levelSelect =
+    document.getElementById(
+        "levelSelect"
+    );
 
 
-        // Allow selecting the same file again
+const editorLevelFiles = [
 
-        levelFileInput.value =
-            "";
+    "./level-1.json",
+    "./level-2.json",
+    "./level-3.json",
+    "./level-4.json",
+    "./level-5.json",
+    "./level-6.json",
+    "./level-7.json",
+    "./level-8.json",
+    "./level-9.json",
+    "./level-10.json"
+
+];
+
+
+function populateLevelSelector() {
+
+    if (!levelSelect) {
+
+        return;
 
     }
-);
 
 
+    const currentValue =
+        levelSelect.value;
+
+
+    levelSelect.innerHTML = "";
+
+
+    for (
+        const file
+        of editorLevelFiles
+    ) {
+
+        const option =
+            new Option(
+
+                file
+                    .replace("./", "")
+                    .replace(".json", "")
+                    .replace(
+                        "level-",
+                        "Level "
+                    ),
+
+                file
+
+            );
+
+
+        levelSelect.appendChild(
+            option
+        );
+
+    }
+
+
+    if (
+        currentValue &&
+        editorLevelFiles.includes(
+            currentValue
+        )
+    ) {
+
+        levelSelect.value =
+            currentValue;
+
+    }
+
+}
+
+
+populateLevelSelector();
+
+
+// ============================================================
+// CHANGE CURRENT LEVEL
+// ============================================================
+
+if (levelSelect) {
+
+    levelSelect.addEventListener(
+        "change",
+        async () => {
+
+            const file =
+                levelSelect.value;
+
+
+            if (!file) {
+
+                return;
+
+            }
+
+
+            try {
+
+                const response =
+                    await fetch(file);
+
+
+                if (!response.ok) {
+
+                    throw new Error(
+                        `Failed to load level: ${file}`
+                    );
+
+                }
+
+
+                const loadedLevel =
+                    await response.json();
+
+
+                loadLevelData(
+                    loadedLevel
+                );
+
+
+                console.log(
+                    "Editor switched to:",
+                    file
+                );
+
+            }
+            catch (error) {
+
+                console.error(
+                    "Failed to switch level:",
+                    error
+                );
+
+
+                alert(
+                    `Could not load ${file}.`
+                );
+
+            }
+
+        }
+    );
+
+}
 // ============================================================
 // LOAD DEFAULT LEVEL
 // ============================================================
 
 async function loadLevel() {
 
-    const levelNumber =
-        levelSelect.value;
+    const file =
+        levelSelect?.value ||
+        "./level-1.json";
 
 
-    await loadLevelFromFile(
-        `./level-${levelNumber}.json`
-    );
+    const response =
+        await fetch(
+            file
+        );
 
-}
 
+    if (!response.ok) {
 
-// ============================================================
-// APPLY LOADED LEVEL DATA
-// ============================================================
+        throw new Error(
+            `Failed to load level: ${file}`
+        );
 
-function loadLevelData(
-    loadedLevel
-) {
+    }
+
 
     level =
-        loadedLevel;
+        await response.json();
 
 
     platforms =
-        level.platforms ||
-        [];
+        level.platforms || [];
 
 
     spawn =
@@ -3134,19 +3856,99 @@ function loadLevelData(
         };
 
 
+    door =
+        level.door || null;
+
+
     level.background =
         level.background ||
         "forest";
 
 
     editorWorld.width =
-        level.width ||
-        3000;
+        level.width;
 
 
     editorWorld.height =
-        level.height ||
-        1200;
+        level.height;
+
+
+    if (backgroundSelect) {
+
+        backgroundSelect.value =
+            level.background;
+
+    }
+
+
+    if (levelSelect) {
+
+        levelSelect.value =
+            file;
+
+    }
+
+
+    updateDoorControls();
+
+
+    console.log(
+        "Editor level loaded:",
+        file,
+        level
+    );
+
+}
+
+
+// ============================================================
+// LOAD LEVEL DATA
+// ============================================================
+
+function loadLevelData(
+    loadedLevel
+) {
+
+    level =
+        loadedLevel;
+
+
+    platforms =
+        level.platforms || [];
+
+
+    spawn =
+        level.spawn || {
+
+            x: 0,
+
+            y: 0
+
+        };
+
+
+    door =
+        level.door || null;
+
+
+    level.background =
+        level.background ||
+        "forest";
+
+
+    editorWorld.width =
+        level.width;
+
+    editorWorld.height =
+        level.height;
+
+
+    if (backgroundSelect) {
+
+        backgroundSelect.value =
+            level.background;
+
+    }
 
 
     clearSelection();
@@ -3164,18 +3966,9 @@ function loadLevelData(
         false;
 
 
-    camera.x =
-        0;
-
-
-    camera.y =
-        0;
-
-
-    updateVisualControls();
-
-
     updatePropertiesPanel();
+
+    updateDoorControls();
 
 
     console.log(
@@ -3237,14 +4030,7 @@ async function startEditor() {
     await loadLevel();
 
 
-    // If the selected level exists,
-    // create the initial undo state.
-
-    if (level) {
-
-        saveHistoryState();
-
-    }
+    saveHistoryState();
 
 
     requestAnimationFrame(

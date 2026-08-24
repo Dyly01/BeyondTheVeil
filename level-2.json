@@ -7,6 +7,13 @@
         "y": 25
     },
     "background": "forest",
+    "door": {
+        "x": 975,
+        "y": 425,
+        "width": 60,
+        "height": 100,
+        "level": "./level-1.json"
+    },
     "platforms": [
         {
             "x": 125,
