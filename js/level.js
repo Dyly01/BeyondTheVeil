@@ -1,67 +1,18 @@
 let level = null;
 
-let currentLevelFile = "./level-1.json";
+let currentLevelFile = "./level.json";
 
 let isLoadingLevel = false;
-
-
-// ============================================================
-// NORMALIZE LEVEL
-// ============================================================
-
-function normalizeLevel(loadedLevel) {
-
-    // --------------------------------------------------------
-    // Convert old single-door format to multiple doors
-    // --------------------------------------------------------
-
-    if (loadedLevel.door) {
-
-        if (Array.isArray(loadedLevel.door)) {
-
-            loadedLevel.doors =
-                loadedLevel.door;
-
-        }
-        else {
-
-            loadedLevel.doors = [
-                loadedLevel.door
-            ];
-
-        }
-
-        delete loadedLevel.door;
-
-    }
-
-
-    // --------------------------------------------------------
-    // Make sure doors always exists
-    // --------------------------------------------------------
-
-    if (!Array.isArray(loadedLevel.doors)) {
-
-        loadedLevel.doors = [];
-
-    }
-
-
-    return loadedLevel;
-
-}
 
 
 // ============================================================
 // LOAD LEVEL
 // ============================================================
 
-async function loadLevel(file = "./level-1.json") {
+async function loadLevel(file = "./level.json") {
 
     if (isLoadingLevel) {
-
-        return false;
-
+        return;
     }
 
     isLoadingLevel = true;
@@ -69,10 +20,7 @@ async function loadLevel(file = "./level-1.json") {
     try {
 
         const response =
-            await fetch(
-                file
-            );
-
+            await fetch(file);
 
         if (!response.ok) {
 
@@ -82,15 +30,12 @@ async function loadLevel(file = "./level-1.json") {
 
         }
 
-
         const loadedLevel =
             await response.json();
 
 
         level =
-            normalizeLevel(
-                loadedLevel
-            );
+            loadedLevel;
 
 
         currentLevelFile =
@@ -103,7 +48,6 @@ async function loadLevel(file = "./level-1.json") {
             level
         );
 
-
         return true;
 
     }
@@ -113,7 +57,6 @@ async function loadLevel(file = "./level-1.json") {
             "Failed to load level:",
             error
         );
-
 
         return false;
 
@@ -145,12 +88,11 @@ async function changeLevel(file) {
 
 
     const success =
-        await loadLevel(
-            file
-        );
+        await loadLevel(file);
 
 
-    return success;
+    return success &&
+        level !== null;
 
 }
 
@@ -182,15 +124,9 @@ function getLevel() {
 // ============================================================
 
 export {
-
     level,
-
     loadLevel,
-
     changeLevel,
-
     getCurrentLevelFile,
-
     getLevel
-
 };

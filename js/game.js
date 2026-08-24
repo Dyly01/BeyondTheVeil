@@ -1,4 +1,9 @@
 import {
+    isPaused,
+    setResetCallback
+} from "./pause.js";
+
+import {
     player,
     spawnPlayer,
     updatePlayer,
@@ -8,7 +13,8 @@ import {
 import {
     level,
     loadLevel,
-    changeLevel
+    changeLevel,
+    getCurrentLevelFile
 } from "./level.js";
 
 import {
@@ -29,6 +35,13 @@ import {
     drawPlatform,
     drawDoor
 } from "./graphics.js";
+
+import {
+    updateLives,
+    isGameOver,
+    drawLives,
+    drawGameOver
+} from "./lives.js";
 
 
 // ============================================================
@@ -76,6 +89,50 @@ resizeCanvas();
 
 let changingLevel = false;
 
+
+async function resetLevel() {
+
+    if (!level || changingLevel) {
+        return;
+    }
+
+    changingLevel = true;
+
+    const currentLevelFile =
+        getCurrentLevelFile();
+
+    await loadLevel(
+        currentLevelFile
+    );
+
+    if (level) {
+
+        spawnPlayer(level);
+
+        camera.x = 0;
+        camera.y = 0;
+
+    }
+
+    changingLevel = false;
+}
+
+setResetCallback(
+    resetLevel
+);
+
+const resetButton =
+    document.getElementById("resetButton");
+
+resetButton.addEventListener("click", async () => {
+
+    // Pause-Menü sofort schließen
+    pauseMenu.classList.remove("active");
+
+    // Danach Level zurücksetzen
+    await resetLevel();
+
+});
 
 // ============================================================
 // CHECK DOORS
@@ -133,9 +190,13 @@ async function checkDoors() {
 // ENTER DOOR
 // ============================================================
 
-async function enterDoor(door) {
+async function enterDoor(
+    door
+) {
 
-    if (changingLevel) {
+    if (
+        changingLevel
+    ) {
 
         return;
 
@@ -168,7 +229,7 @@ async function enterDoor(door) {
     ) {
 
         // ----------------------------------------------------
-        // Spawn player at new level
+        // Spawn player in new level
         // ----------------------------------------------------
 
         spawnPlayer(
@@ -181,14 +242,16 @@ async function enterDoor(door) {
         // ----------------------------------------------------
 
         camera.x = 0;
+
         camera.y = 0;
 
 
         // ----------------------------------------------------
-        // Reset player movement
+        // Reset movement
         // ----------------------------------------------------
 
         player.velocityX = 0;
+
         player.velocityY = 0;
 
     }
@@ -204,7 +267,41 @@ async function enterDoor(door) {
 // UPDATE
 // ============================================================
 
-function update(deltaTime) {
+function update(
+    deltaTime
+) {
+
+    // --------------------------------------------------------
+    // Game Over
+    // --------------------------------------------------------
+
+    if (
+        isGameOver()
+    ) {
+
+        updateInput();
+
+        return;
+
+    }
+
+
+    // --------------------------------------------------------
+    // Paused
+    // --------------------------------------------------------
+    if (
+       isPaused() 
+    ) {
+
+        updateInput();
+
+        return;
+
+    }
+
+    // --------------------------------------------------------
+    // Level transition / missing level
+    // --------------------------------------------------------
 
     if (
         !level ||
@@ -223,6 +320,13 @@ function update(deltaTime) {
     updatePlayer(
         deltaTime
     );
+
+
+    // --------------------------------------------------------
+    // Lives / death
+    // --------------------------------------------------------
+
+    updateLives();
 
 
     // --------------------------------------------------------
@@ -265,6 +369,10 @@ function draw() {
     );
 
 
+    // --------------------------------------------------------
+    // No level loaded
+    // --------------------------------------------------------
+
     if (!level) {
 
         return;
@@ -287,7 +395,7 @@ function draw() {
 
 
     // ========================================================
-    // CAMERA TRANSFORMATION
+    // CAMERA
     // ========================================================
 
     ctx.save();
@@ -303,15 +411,23 @@ function draw() {
     // PLATFORMS
     // ========================================================
 
-    for (
-        const platform
-        of level.platforms
+    if (
+        Array.isArray(
+            level.platforms
+        )
     ) {
 
-        drawPlatform(
-            ctx,
-            platform
-        );
+        for (
+            const platform
+            of level.platforms
+        ) {
+
+            drawPlatform(
+                ctx,
+                platform
+            );
+
+        }
 
     }
 
@@ -352,16 +468,37 @@ function draw() {
     // PLAYER
     // ========================================================
 
-    drawPlayer(
+    if (
+        !isGameOver()
+    ) {
+
+        drawPlayer(
+            ctx
+        );
+
+    }
+
+
+    // ========================================================
+    // END CAMERA
+    // ========================================================
+
+    ctx.restore();
+
+
+    // ========================================================
+    // UI
+    // ========================================================
+
+    drawLives(
         ctx
     );
 
 
-    // ========================================================
-    // END CAMERA TRANSFORMATION
-    // ========================================================
-
-    ctx.restore();
+    drawGameOver(
+        ctx,
+        canvas
+    );
 
 }
 

@@ -11,3 +11,200 @@ body {
 canvas {
     display: block;
 }
+
+#livesDisplay {
+    position: fixed;
+
+    top: 20px;
+    left: 20px;
+
+    display: flex;
+
+    gap: 8px;
+
+    font-size: 32px;
+
+    z-index: 1000;
+
+    pointer-events: none;
+}
+
+#livesDisplay span {
+    line-height: 1;
+
+    color: red;
+}
+
+#pauseButton {
+    position: fixed;
+
+    top: 20px;
+    right: 20px;
+
+    width: 52px;
+    height: 52px;
+
+    border: 2px solid rgba(255, 255, 255, 0.25);
+    border-radius: 50%;
+
+    background: rgba(20, 20, 25, 0.85);
+
+    color: white;
+
+    font-size: 30px;
+    line-height: 1;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    cursor: pointer;
+
+    z-index: 1000;
+
+    box-shadow:
+        0 4px 12px rgba(0, 0, 0, 0.45);
+
+    transition:
+        transform 0.2s ease,
+        background 0.2s ease,
+        border-color 0.2s ease;
+}
+
+#pauseButton::before {
+    content: "";
+
+    width: 28px;
+    height: 28px;
+
+    background: white;
+
+    clip-path: polygon(
+        /* oben */
+        38% 0%,
+        62% 0%,
+        64% 10%,
+        72% 12%,
+        78% 4%,
+        92% 12%,
+        84% 22%,
+        88% 30%,
+
+        /* rechts */
+        100% 38%,
+        100% 62%,
+        88% 64%,
+        86% 72%,
+        96% 78%,
+        88% 92%,
+        78% 84%,
+        70% 88%,
+
+        /* unten */
+        62% 100%,
+        38% 100%,
+        36% 88%,
+        28% 86%,
+        22% 96%,
+        8% 88%,
+        16% 78%,
+        12% 70%,
+
+        /* links */
+        0% 62%,
+        0% 38%,
+        12% 36%,
+        14% 28%,
+        4% 22%,
+        12% 8%,
+        22% 16%,
+        30% 12%
+    );
+
+    transition:
+        transform 0.3s ease;
+}
+
+#pauseButton::after {
+    content: "";
+
+    position: absolute;
+
+    width: 9px;
+    height: 9px;
+
+    background: rgba(20, 20, 25, 0.95);
+
+    border-radius: 50%;
+}
+
+#pauseMenu {
+    position: fixed;
+
+    inset: 0;
+
+    display: none;
+
+    align-items: center;
+    justify-content: center;
+
+    background: rgba(0, 0, 0, 0.65);
+
+    z-index: 2000;
+}
+
+
+#pauseMenuContent {
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    gap: 15px;
+
+    min-width: 300px;
+
+    padding: 40px;
+
+    background: rgba(20, 20, 20, 0.95);
+
+    border-radius: 12px;
+}
+
+
+#pauseMenuContent h1 {
+    margin: 0 0 20px 0;
+
+    color: white;
+
+    font-size: 42px;
+}
+
+
+#pauseMenuContent button {
+    width: 220px;
+
+    padding: 12px;
+
+    font-size: 20px;
+
+    cursor: pointer;
+}
+
+#pauseButton:hover {
+    background: rgba(50, 50, 50, 0.9);
+
+    transform: scale(1.08);
+
+    box-shadow:
+        0 6px 18px rgba(0, 0, 0, 0.5);
+}
+
+#pauseButton:hover::before {
+    transform: rotate(30deg);
+}
+
+#pauseButton:active {
+    transform: scale(0.95);
+}
