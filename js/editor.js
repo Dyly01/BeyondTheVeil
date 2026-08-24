@@ -644,6 +644,7 @@ let resizingHandle =
 let originalPlatforms =
     [];
 
+let originalDoor = null;
 
 // ============================================================
 // BASIC TOOLS
@@ -1581,6 +1582,16 @@ canvas.addEventListener(
 
                 };
 
+                originalDoor = {
+
+                    x:
+                        door.x,
+
+                    y:
+                        door.y
+
+                };
+
 
                 isDragging =
                     true;
@@ -1730,6 +1741,16 @@ canvas.addEventListener(
 
                 y:
                     worldPosition.y
+
+            };
+
+            originalDoor = {
+
+                x:
+                    door.x,
+
+                y:
+                    door.y
 
             };
 
@@ -2206,7 +2227,8 @@ canvas.addEventListener(
 
         if (
             selectedDoor &&
-            door
+            door &&
+            originalDoor
         ) {
 
             const deltaX =
@@ -2223,23 +2245,14 @@ canvas.addEventListener(
                 );
 
 
-            door.x +=
+            door.x =
+                originalDoor.x +
                 deltaX;
 
 
-            door.y +=
+            door.y =
+                originalDoor.y +
                 deltaY;
-
-
-            dragStart = {
-
-                x:
-                    worldPosition.x,
-
-                y:
-                    worldPosition.y
-
-            };
 
 
             return;
@@ -2547,6 +2560,9 @@ canvas.addEventListener(
 
             isDragging =
                 false;
+
+            originalDoor =
+                null;
 
             saveHistoryState();
 
