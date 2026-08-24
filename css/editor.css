@@ -25,9 +25,9 @@ body {
 
     display: flex;
 
-    gap: 5px;
-
     align-items: center;
+
+    gap: 5px;
 
     padding: 8px;
 
@@ -37,10 +37,17 @@ body {
 
     font-size: 13px;
 
-    border-radius: 4px;
+    border-radius: 6px;
+
+    box-shadow:
+        0 3px 12px rgba(0, 0, 0, 0.35);
 
 }
 
+
+/* ============================================================
+   TOOLBAR LABELS
+   ============================================================ */
 
 #toolbar label {
 
@@ -50,8 +57,14 @@ body {
 
     gap: 5px;
 
+    white-space: nowrap;
+
 }
 
+
+/* ============================================================
+   SELECTS / INPUTS / BUTTONS
+   ============================================================ */
 
 #toolbar select,
 #toolbar input,
@@ -63,14 +76,75 @@ body {
 
 
 /* ============================================================
-   BUTTONS
+   LEVEL SELECTOR
    ============================================================ */
 
-button {
+#levelSelectorLabel {
 
-    padding: 8px 14px;
+    padding-right: 3px;
 
-    border: none;
+}
+
+
+#levelSelect {
+
+    min-width: 75px;
+
+    padding: 5px 6px;
+
+    background: #263b3d;
+
+    color: #e4f0dc;
+
+    border: 1px solid #536a68;
+
+    border-radius: 4px;
+
+    cursor: pointer;
+
+}
+
+
+/* ============================================================
+   BACKGROUND SELECTOR
+   ============================================================ */
+
+#backgroundSelect {
+
+    min-width: 115px;
+
+    padding: 5px 6px;
+
+    background: #263b3d;
+
+    color: #e4f0dc;
+
+    border: 1px solid #536a68;
+
+    border-radius: 4px;
+
+    cursor: pointer;
+
+}
+
+
+/* ============================================================
+   PLATFORM STYLE SELECTOR
+   ============================================================ */
+
+#platformStyleSelect {
+
+    min-width: 95px;
+
+    padding: 5px 6px;
+
+    background: #263b3d;
+
+    color: #e4f0dc;
+
+    border: 1px solid #536a68;
+
+    border-radius: 4px;
 
     cursor: pointer;
 
@@ -83,13 +157,54 @@ button {
 
 #platformColorInput {
 
-    width: 38px;
+    width: 34px;
 
-    height: 30px;
+    height: 28px;
 
     padding: 2px;
 
+    border: 1px solid #536a68;
+
+    border-radius: 4px;
+
+    background: #263b3d;
+
     cursor: pointer;
+
+}
+
+
+/* ============================================================
+   BUTTONS
+   ============================================================ */
+
+#toolbar button {
+
+    padding: 8px 14px;
+
+    border: none;
+
+    border-radius: 4px;
+
+    cursor: pointer;
+
+    background: #d6e7c2;
+
+    color: #17251e;
+
+}
+
+
+#toolbar button:hover {
+
+    background: #e3f0d4;
+
+}
+
+
+#toolbar button:active {
+
+    transform: translateY(1px);
 
 }
 
@@ -105,6 +220,7 @@ button {
     position: fixed;
 
     right: 20px;
+
     bottom: 20px;
 
     width: 220px;
@@ -132,6 +248,7 @@ button {
 #propertiesPanel h3 {
 
     margin-top: 0;
+
     margin-bottom: 15px;
 
 }
@@ -188,13 +305,48 @@ button {
    RESPONSIVE TOOLBAR
    ============================================================ */
 
-@media (max-width: 900px) {
+@media (max-width: 1100px) {
 
     #toolbar {
 
         flex-wrap: wrap;
 
         max-width: calc(100vw - 36px);
+
+    }
+
+}
+
+
+@media (max-width: 700px) {
+
+    #toolbar {
+
+        top: 5px;
+
+        left: 5px;
+
+        right: 5px;
+
+        gap: 4px;
+
+        padding: 6px;
+
+        max-width: none;
+
+    }
+
+    #toolbar button {
+
+        padding: 7px 10px;
+
+    }
+
+    #levelSelect,
+    #backgroundSelect,
+    #platformStyleSelect {
+
+        min-width: 0;
 
     }
 

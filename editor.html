@@ -17,93 +17,180 @@
 
     <div id="toolbar">
 
-        <button id="platformTool">
-            Platform
-        </button>
+        <!-- LEVEL SELECTOR -->
 
-        <button id="spawnTool">
-            Spawn
-        </button>
+        <label id="levelSelectorLabel">
 
-        <button id="eraseTool">
-            Erase
-        </button>
+            Level
 
-        <button id="loadButton">
-            Load Level
-        </button>
+            <select id="levelSelect">
 
-        <!-- Scene selection -->
-        <label>
+                <option value="1">
+                    Level 1
+                </option>
+
+                <option value="2">
+                    Level 2
+                </option>
+
+                <option value="3">
+                    Level 3
+                </option>
+
+                <option value="4">
+                    Level 4
+                </option>
+
+                <option value="5">
+                    Level 5
+                </option>
+
+            </select>
+
+        </label>
+
+
+        <!-- BACKGROUND -->
+
+        <label id="backgroundLabel">
+
             Scene
+
             <select id="backgroundSelect"></select>
+
         </label>
 
-        <!-- Platform style selection -->
-        <label>
+
+        <!-- PLATFORM STYLE -->
+
+        <label id="platformStyleLabel">
+
             Platform
+
             <select id="platformStyleSelect"></select>
+
         </label>
 
-        <!-- Platform color selection -->
-        <label>
+
+        <!-- PLATFORM COLOR -->
+
+        <label id="platformColorLabel">
+
             Color
+
             <input
                 id="platformColorInput"
                 type="color"
                 value="#737d81"
             >
+
         </label>
 
+
+        <!-- TOOLS -->
+
+        <button id="platformTool">
+
+            Platform
+
+        </button>
+
+
+        <button id="spawnTool">
+
+            Spawn
+
+        </button>
+
+
+        <button id="eraseTool">
+
+            Erase
+
+        </button>
+
+
+        <button id="loadButton">
+
+            Load Level
+
+        </button>
+
+
         <button id="saveButton">
+
             Save
+
         </button>
 
     </div>
 
+
+    <!-- PROPERTIES PANEL -->
 
     <div id="propertiesPanel">
 
         <h3>Platform</h3>
 
+
         <label>
+
             X
+
             <input
                 id="propertyX"
                 type="number"
             >
+
         </label>
 
+
         <label>
+
             Y
+
             <input
                 id="propertyY"
                 type="number"
             >
+
         </label>
 
+
         <label>
+
             Width
+
             <input
                 id="propertyWidth"
                 type="number"
             >
+
         </label>
 
+
         <label>
+
             Height
+
             <input
                 id="propertyHeight"
                 type="number"
             >
+
         </label>
 
+
         <button id="applyProperties">
+
             Apply
+
         </button>
 
     </div>
 
+
+    <!-- HIDDEN FILE INPUT -->
 
     <input
         type="file"
@@ -112,6 +199,8 @@
         hidden
     >
 
+
+    <!-- EDITOR CANVAS -->
 
     <canvas id="editorCanvas"></canvas>
 

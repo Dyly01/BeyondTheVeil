@@ -94,6 +94,12 @@ let spawn = {
 // VISUAL DESIGN CONTROLS
 // ============================================================
 
+const levelSelect =
+    document.getElementById(
+        "levelSelect"
+    );
+
+
 const backgroundSelect =
     document.getElementById(
         "backgroundSelect"
@@ -112,7 +118,7 @@ const platformColorInput =
     );
 
 
-// Populate background selection
+// Populate background selector
 
 for (
     const [value, label]
@@ -129,7 +135,7 @@ for (
 }
 
 
-// Populate platform style selection
+// Populate platform style selector
 
 for (
     const [value, label]
@@ -142,101 +148,6 @@ for (
             value
         )
     );
-
-}
-
-
-// Default values
-
-backgroundSelect.value =
-    "forest";
-
-
-platformStyleSelect.value =
-    "stone";
-
-
-platformColorInput.value =
-    "#737d81";
-
-
-// ============================================================
-// VISUAL DESIGN FUNCTIONS
-// ============================================================
-
-function applyPlatformDesign() {
-
-    if (
-        selectedPlatforms.length === 0
-    ) {
-
-        return false;
-
-    }
-
-
-    let changed =
-        false;
-
-
-    const style =
-        platformStyleSelect.value;
-
-
-    const color =
-        platformColorInput.value;
-
-
-    for (
-        const platform
-        of selectedPlatforms
-    ) {
-
-        if (
-            platform.style !== style ||
-            platform.color !== color
-        ) {
-
-            platform.style =
-                style;
-
-            platform.color =
-                color;
-
-            changed =
-                true;
-
-        }
-
-    }
-
-
-    return changed;
-
-}
-
-
-function updateDesignControlsFromSelection() {
-
-    if (
-        selectedPlatforms.length !== 1
-    ) {
-
-        return;
-
-    }
-
-
-    const platform =
-        selectedPlatforms[0];
-
-
-    platformStyleSelect.value =
-        platform.style || "stone";
-
-
-    platformColorInput.value =
-        platform.color || "#737d81";
 
 }
 
@@ -256,25 +167,8 @@ backgroundSelect.addEventListener(
         }
 
 
-        const oldBackground =
-            level.background || "forest";
-
-
-        const newBackground =
-            backgroundSelect.value;
-
-
-        if (
-            oldBackground === newBackground
-        ) {
-
-            return;
-
-        }
-
-
         level.background =
-            newBackground;
+            backgroundSelect.value;
 
 
         saveHistoryState();
@@ -284,62 +178,98 @@ backgroundSelect.addEventListener(
 
 
 // ============================================================
-// PLATFORM STYLE SELECTION
+// PLATFORM DESIGN
 // ============================================================
 
-platformStyleSelect.addEventListener(
-    "change",
-    () => {
+function applyPlatformDesign() {
+
+    if (
+        selectedPlatforms.length === 0
+    ) {
+
+        return;
+
+    }
+
+
+    let changed = false;
+
+
+    for (
+        const platform
+        of selectedPlatforms
+    ) {
+
+        const oldStyle =
+            platform.style || "stone";
+
+
+        const oldColor =
+            platform.color || "#737d81";
+
+
+        const newStyle =
+            platformStyleSelect.value;
+
+
+        const newColor =
+            platformColorInput.value;
+
 
         if (
-            selectedPlatforms.length === 0
+            oldStyle !== newStyle ||
+            oldColor !== newColor
         ) {
 
-            return;
+            platform.style =
+                newStyle;
 
-        }
+            platform.color =
+                newColor;
 
-
-        const changed =
-            applyPlatformDesign();
-
-
-        if (changed) {
-
-            saveHistoryState();
+            changed = true;
 
         }
 
     }
+
+
+    if (changed) {
+
+        saveHistoryState();
+
+    }
+
+}
+
+
+platformStyleSelect.addEventListener(
+    "change",
+    applyPlatformDesign
+);
+
+
+platformColorInput.addEventListener(
+    "input",
+    applyPlatformDesign
 );
 
 
 // ============================================================
-// PLATFORM COLOR SELECTION
+// LEVEL SELECTOR
 // ============================================================
 
-platformColorInput.addEventListener(
+levelSelect.addEventListener(
     "change",
-    () => {
+    async () => {
 
-        if (
-            selectedPlatforms.length === 0
-        ) {
-
-            return;
-
-        }
+        const levelNumber =
+            levelSelect.value;
 
 
-        const changed =
-            applyPlatformDesign();
-
-
-        if (changed) {
-
-            saveHistoryState();
-
-        }
+        await loadLevelFromFile(
+            `./level-${levelNumber}.json`
+        );
 
     }
 );
@@ -373,7 +303,7 @@ function createEditorSnapshot() {
 
 function saveHistoryState() {
 
-    // Remove states after the current one
+    // Remove states after current state
 
     history.splice(
         historyIndex + 1
@@ -422,19 +352,12 @@ function restoreHistoryState(
     editorWorld.width =
         level.width;
 
+
     editorWorld.height =
         level.height;
 
 
-    // Make sure older levels get
-    // the new default background.
-
-    level.background =
-        level.background || "forest";
-
-
-    backgroundSelect.value =
-        level.background;
+    updateVisualControls();
 
 
     clearSelection();
@@ -521,7 +444,8 @@ document.addEventListener(
 
         const isTyping =
             activeElement.tagName === "INPUT" ||
-            activeElement.tagName === "TEXTAREA";
+            activeElement.tagName === "TEXTAREA" ||
+            activeElement.tagName === "SELECT";
 
 
         if (isTyping) {
@@ -531,9 +455,7 @@ document.addEventListener(
         }
 
 
-        // ----------------------------------------------------
         // DELETE
-        // ----------------------------------------------------
 
         if (
             event.key === "Delete" &&
@@ -547,9 +469,7 @@ document.addEventListener(
         }
 
 
-        // ----------------------------------------------------
         // UNDO
-        // ----------------------------------------------------
 
         if (
             event.ctrlKey &&
@@ -564,9 +484,7 @@ document.addEventListener(
         }
 
 
-        // ----------------------------------------------------
         // REDO
-        // ----------------------------------------------------
 
         if (
             event.ctrlKey &&
@@ -580,9 +498,7 @@ document.addEventListener(
         }
 
 
-        // ----------------------------------------------------
         // SELECT ALL
-        // ----------------------------------------------------
 
         if (
             event.ctrlKey &&
@@ -596,10 +512,6 @@ document.addEventListener(
 
 
             updatePropertiesPanel();
-
-
-            updateDesignControlsFromSelection();
-
 
             return;
 
@@ -831,14 +743,9 @@ let currentTool =
     "platform";
 
 
-// Resize handle
-
 let resizingHandle =
     null;
 
-
-// Original state of selected platforms
-// while moving or resizing
 
 let originalPlatforms =
     [];
@@ -1036,15 +943,13 @@ function getResizeHandle(
                 screenX +
                 screenWidth,
 
-            y:
-                screenY
+            y: screenY
 
         },
 
         bottomLeft: {
 
-            x:
-                screenX,
+            x: screenX,
 
             y:
                 screenY +
@@ -1164,15 +1069,10 @@ function updateCursor(
         canvas.style.cursor =
             "default";
 
-
         return;
 
     }
 
-
-    // --------------------------------------------------------
-    // Resize handles
-    // --------------------------------------------------------
 
     if (
         selectedPlatforms.length === 1
@@ -1197,7 +1097,6 @@ function updateCursor(
             canvas.style.cursor =
                 "nwse-resize";
 
-
             return;
 
         }
@@ -1209,7 +1108,6 @@ function updateCursor(
 
             canvas.style.cursor =
                 "nesw-resize";
-
 
             return;
 
@@ -1223,7 +1121,6 @@ function updateCursor(
             canvas.style.cursor =
                 "nesw-resize";
 
-
             return;
 
         }
@@ -1236,17 +1133,12 @@ function updateCursor(
             canvas.style.cursor =
                 "nwse-resize";
 
-
             return;
 
         }
 
     }
 
-
-    // --------------------------------------------------------
-    // Check selected platforms
-    // --------------------------------------------------------
 
     const worldPosition =
         screenToWorld(
@@ -1277,7 +1169,6 @@ function updateCursor(
 
         canvas.style.cursor =
             "grab";
-
 
         return;
 
@@ -1326,7 +1217,6 @@ canvas.addEventListener(
 
 
             saveHistoryState();
-
 
             return;
 
@@ -1450,10 +1340,6 @@ canvas.addEventListener(
 
         if (platform) {
 
-            // ------------------------------------------------
-            // CTRL + CLICK
-            // ------------------------------------------------
-
             if (
                 event.ctrlKey
             ) {
@@ -1466,17 +1352,10 @@ canvas.addEventListener(
                 updatePropertiesPanel();
 
 
-                updateDesignControlsFromSelection();
-
-
                 return;
 
             }
 
-
-            // ------------------------------------------------
-            // NORMAL CLICK
-            // ------------------------------------------------
 
             if (
                 !isPlatformSelected(
@@ -1494,31 +1373,20 @@ canvas.addEventListener(
             updatePropertiesPanel();
 
 
-            updateDesignControlsFromSelection();
-
-
-            // ------------------------------------------------
-            // START MOVEMENT
-            // ------------------------------------------------
-
             if (
                 selectedPlatforms.length > 0
             ) {
 
-                dragStart =
-                    {
+                dragStart = {
 
-                        x:
-                            worldPosition.x,
+                    x:
+                        worldPosition.x,
 
-                        y:
-                            worldPosition.y
+                    y:
+                        worldPosition.y
 
-                    };
+                };
 
-
-                // Store original positions
-                // of ALL selected platforms.
 
                 originalPlatforms =
                     selectedPlatforms.map(
@@ -1586,16 +1454,15 @@ canvas.addEventListener(
         };
 
 
-        dragCurrent =
-            {
+        dragCurrent = {
 
-                x:
-                    dragStart.x,
+            x:
+                dragStart.x,
 
-                y:
-                    dragStart.y
+            y:
+                dragStart.y
 
-            };
+        };
 
 
         isDragging =
@@ -1654,7 +1521,6 @@ function updatePropertiesPanel() {
         propertiesPanel.style.display =
             "none";
 
-
         return;
 
     }
@@ -1682,6 +1548,14 @@ function updatePropertiesPanel() {
 
     propertyHeight.value =
         platform.height;
+
+
+    platformStyleSelect.value =
+        platform.style || "stone";
+
+
+    platformColorInput.value =
+        platform.color || "#737d81";
 
 }
 
@@ -1759,32 +1633,24 @@ function applyPropertyChanges() {
 
 
     platform.x =
-        snapToGrid(
-            x
-        );
+        snapToGrid(x);
 
 
     platform.y =
-        snapToGrid(
-            y
-        );
+        snapToGrid(y);
 
 
     platform.width =
         Math.max(
             GRID_SIZE,
-            snapToGrid(
-                width
-            )
+            snapToGrid(width)
         );
 
 
     platform.height =
         Math.max(
             GRID_SIZE,
-            snapToGrid(
-                height
-            )
+            snapToGrid(height)
         );
 
 
@@ -1827,10 +1693,6 @@ canvas.addEventListener(
                 event.offsetY
             );
 
-
-        // ====================================================
-        // NOTHING IS BEING DRAGGED
-        // ====================================================
 
         if (!isDragging) {
 
@@ -1901,7 +1763,6 @@ canvas.addEventListener(
                     platform.x =
                         mouseX;
 
-
                     platform.width =
                         newWidth;
 
@@ -1914,7 +1775,6 @@ canvas.addEventListener(
 
                     platform.y =
                         mouseY;
-
 
                     platform.height =
                         newHeight;
@@ -1955,7 +1815,6 @@ canvas.addEventListener(
                     platform.y =
                         mouseY;
 
-
                     platform.height =
                         newHeight;
 
@@ -1984,7 +1843,6 @@ canvas.addEventListener(
 
                     platform.x =
                         mouseX;
-
 
                     platform.width =
                         newWidth;
@@ -2172,9 +2030,7 @@ canvas.addEventListener(
             }
 
 
-            if (
-                changed
-            ) {
+            if (changed) {
 
                 saveHistoryState();
 
@@ -2228,7 +2084,6 @@ canvas.addEventListener(
                     changed =
                         true;
 
-
                     break;
 
                 }
@@ -2236,9 +2091,7 @@ canvas.addEventListener(
             }
 
 
-            if (
-                changed
-            ) {
+            if (changed) {
 
                 saveHistoryState();
 
@@ -2269,7 +2122,6 @@ canvas.addEventListener(
 
             isDragging =
                 false;
-
 
             return;
 
@@ -2420,46 +2272,6 @@ canvas.addEventListener(
             mouseY /
             camera.zoom;
 
-
-        // Keep camera inside world
-
-        const maxX =
-            Math.max(
-                0,
-                editorWorld.width -
-                canvas.width /
-                camera.zoom
-            );
-
-
-        const maxY =
-            Math.max(
-                0,
-                editorWorld.height -
-                canvas.height /
-                camera.zoom
-            );
-
-
-        camera.x =
-            Math.max(
-                0,
-                Math.min(
-                    camera.x,
-                    maxX
-                )
-            );
-
-
-        camera.y =
-            Math.max(
-                0,
-                Math.min(
-                    camera.y,
-                    maxY
-                )
-            );
-
     },
     {
         passive: false
@@ -2573,47 +2385,19 @@ function drawGrid() {
 
 function drawPlatforms() {
 
-    // --------------------------------------------------------
     // Normal platforms
-    // --------------------------------------------------------
 
     for (
         const platform
         of platforms
     ) {
 
-        // Older level files might not have
-        // style/color yet.
-
-        const platformToDraw = {
-
-            ...platform,
-
-            style:
-                platform.style || "stone",
-
-            color:
-                platform.color || "#737d81"
-
-        };
-
-
-        /*
-         * drawPlatform() uses world coordinates.
-         *
-         * The editor uses a camera and zoom, so we temporarily
-         * transform the canvas from world space to screen space.
-         */
-
         ctx.save();
 
 
         ctx.translate(
-            -camera.x *
-            camera.zoom,
-
-            -camera.y *
-            camera.zoom
+            -camera.x * camera.zoom,
+            -camera.y * camera.zoom
         );
 
 
@@ -2625,7 +2409,7 @@ function drawPlatforms() {
 
         drawPlatform(
             ctx,
-            platformToDraw
+            platform
         );
 
 
@@ -2634,9 +2418,9 @@ function drawPlatforms() {
     }
 
 
-    // --------------------------------------------------------
+    // ========================================================
     // CREATE PLATFORM PREVIEW
-    // --------------------------------------------------------
+    // ========================================================
 
     if (
         isDragging &&
@@ -2700,9 +2484,9 @@ function drawPlatforms() {
     }
 
 
-    // --------------------------------------------------------
+    // ========================================================
     // SELECTION BORDERS
-    // --------------------------------------------------------
+    // ========================================================
 
     for (
         const platform
@@ -2749,9 +2533,9 @@ function drawPlatforms() {
     }
 
 
-    // --------------------------------------------------------
+    // ========================================================
     // RESIZE HANDLES
-    // --------------------------------------------------------
+    // ========================================================
 
     if (
         selectedPlatforms.length === 1
@@ -2791,75 +2575,35 @@ function drawPlatforms() {
             "yellow";
 
 
-        // Top-left
-
         ctx.fillRect(
-
-            x -
-                handleSize / 2,
-
-            y -
-                handleSize / 2,
-
+            x - handleSize / 2,
+            y - handleSize / 2,
             handleSize,
-
             handleSize
-
         );
 
 
-        // Top-right
-
         ctx.fillRect(
-
-            x +
-                width -
-                handleSize / 2,
-
-            y -
-                handleSize / 2,
-
+            x + width - handleSize / 2,
+            y - handleSize / 2,
             handleSize,
-
             handleSize
-
         );
 
 
-        // Bottom-left
-
         ctx.fillRect(
-
-            x -
-                handleSize / 2,
-
-            y +
-                height -
-                handleSize / 2,
-
+            x - handleSize / 2,
+            y + height - handleSize / 2,
             handleSize,
-
             handleSize
-
         );
 
 
-        // Bottom-right
-
         ctx.fillRect(
-
-            x +
-                width -
-                handleSize / 2,
-
-            y +
-                height -
-                handleSize / 2,
-
+            x + width - handleSize / 2,
+            y + height - handleSize / 2,
             handleSize,
-
             handleSize
-
         );
 
     }
@@ -2932,7 +2676,7 @@ function drawSpawn() {
 
 
     ctx.font =
-        "14px Arial";
+        `${14 * camera.zoom}px Arial`;
 
 
     ctx.fillText(
@@ -2940,6 +2684,60 @@ function drawSpawn() {
         x,
         y - 8
     );
+
+}
+
+
+// ============================================================
+// VISUAL CONTROL UPDATE
+// ============================================================
+
+function updateVisualControls() {
+
+    if (!level) {
+
+        return;
+
+    }
+
+
+    level.background =
+        level.background ||
+        "forest";
+
+
+    backgroundSelect.value =
+        level.background;
+
+
+    if (
+        selectedPlatforms.length === 1
+    ) {
+
+        const platform =
+            selectedPlatforms[0];
+
+
+        platformStyleSelect.value =
+            platform.style ||
+            "stone";
+
+
+        platformColorInput.value =
+            platform.color ||
+            "#737d81";
+
+    }
+    else {
+
+        platformStyleSelect.value =
+            "stone";
+
+
+        platformColorInput.value =
+            "#737d81";
+
+    }
 
 }
 
@@ -2958,11 +2756,10 @@ function draw() {
     );
 
 
-    // --------------------------------------------------------
-    // Background
-    // --------------------------------------------------------
+    // Background is drawn in screen space
 
     drawBackground(
+
         ctx,
 
         level?.background ||
@@ -2975,26 +2772,13 @@ function draw() {
         camera.x,
 
         camera.y
+
     );
 
 
-    // --------------------------------------------------------
-    // Grid
-    // --------------------------------------------------------
-
     drawGrid();
 
-
-    // --------------------------------------------------------
-    // Platforms
-    // --------------------------------------------------------
-
     drawPlatforms();
-
-
-    // --------------------------------------------------------
-    // Spawn
-    // --------------------------------------------------------
 
     drawSpawn();
 
@@ -3069,7 +2853,7 @@ async function saveLevel() {
             await window.showSaveFilePicker({
 
                 suggestedName:
-                    "level.json",
+                    `level-${levelSelect.value}.json`,
 
                 types: [
 
@@ -3146,7 +2930,7 @@ async function saveLevel() {
 
 
     link.download =
-        "level.json";
+        `level-${levelSelect.value}.json`;
 
 
     link.click();
@@ -3160,7 +2944,66 @@ async function saveLevel() {
 
 
 // ============================================================
-// LOAD LEVEL
+// LOAD LEVEL FROM FILE
+// ============================================================
+
+async function loadLevelFromFile(
+    filePath
+) {
+
+    try {
+
+        const response =
+            await fetch(
+                filePath
+            );
+
+
+        if (!response.ok) {
+
+            throw new Error(
+                `Could not load ${filePath}`
+            );
+
+        }
+
+
+        const loadedLevel =
+            await response.json();
+
+
+        loadLevelData(
+            loadedLevel
+        );
+
+
+        saveHistoryState();
+
+
+        console.log(
+            "Level loaded:",
+            filePath
+        );
+
+    }
+    catch (error) {
+
+        console.error(
+            error
+        );
+
+
+        alert(
+            `Could not load ${filePath}.`
+        );
+
+    }
+
+}
+
+
+// ============================================================
+// LOAD LEVEL FROM FILE PICKER
 // ============================================================
 
 const loadButton =
@@ -3237,82 +3080,36 @@ levelFileInput.addEventListener(
 
         }
 
+
+        // Allow selecting the same file again
+
+        levelFileInput.value =
+            "";
+
     }
 );
 
 
+// ============================================================
+// LOAD DEFAULT LEVEL
+// ============================================================
+
 async function loadLevel() {
 
-    const response =
-        await fetch(
-            "./level.json"
-        );
+    const levelNumber =
+        levelSelect.value;
 
 
-    level =
-        await response.json();
-
-
-    platforms =
-        level.platforms || [];
-
-
-    spawn =
-        level.spawn || {
-
-            x: 0,
-
-            y: 0
-
-        };
-
-
-    // Default for older levels
-
-    level.background =
-        level.background ||
-        "forest";
-
-
-    backgroundSelect.value =
-        level.background;
-
-
-    // Give older platforms the new
-    // default visual properties.
-
-    for (
-        const platform
-        of platforms
-    ) {
-
-        platform.style =
-            platform.style ||
-            "stone";
-
-
-        platform.color =
-            platform.color ||
-            "#737d81";
-
-    }
-
-
-    editorWorld.width =
-        level.width;
-
-
-    editorWorld.height =
-        level.height;
-
-
-    console.log(
-        "Editor level loaded:",
-        level
+    await loadLevelFromFile(
+        `./level-${levelNumber}.json`
     );
 
 }
 
+
+// ============================================================
+// APPLY LOADED LEVEL DATA
+// ============================================================
 
 function loadLevelData(
     loadedLevel
@@ -3323,7 +3120,8 @@ function loadLevelData(
 
 
     platforms =
-        level.platforms || [];
+        level.platforms ||
+        [];
 
 
     spawn =
@@ -3341,35 +3139,14 @@ function loadLevelData(
         "forest";
 
 
-    backgroundSelect.value =
-        level.background;
-
-
-    // Make old platforms compatible
-
-    for (
-        const platform
-        of platforms
-    ) {
-
-        platform.style =
-            platform.style ||
-            "stone";
-
-
-        platform.color =
-            platform.color ||
-            "#737d81";
-
-    }
-
-
     editorWorld.width =
-        level.width;
+        level.width ||
+        3000;
 
 
     editorWorld.height =
-        level.height;
+        level.height ||
+        1200;
 
 
     clearSelection();
@@ -3387,11 +3164,18 @@ function loadLevelData(
         false;
 
 
+    camera.x =
+        0;
+
+
+    camera.y =
+        0;
+
+
+    updateVisualControls();
+
+
     updatePropertiesPanel();
-
-
-    canvas.style.cursor =
-        "default";
 
 
     console.log(
@@ -3453,7 +3237,14 @@ async function startEditor() {
     await loadLevel();
 
 
-    saveHistoryState();
+    // If the selected level exists,
+    // create the initial undo state.
+
+    if (level) {
+
+        saveHistoryState();
+
+    }
 
 
     requestAnimationFrame(

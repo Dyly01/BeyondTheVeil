@@ -1,0 +1,60 @@
+{
+    "name": "Test Level",
+    "width": 3000,
+    "height": 1200,
+    "spawn": {
+        "x": 500,
+        "y": 25
+    },
+    "background": "forest",
+    "platforms": [
+        {
+            "x": 125,
+            "y": 100,
+            "width": 125,
+            "height": 100,
+            "style": "stone",
+            "color": "#d2d6d7"
+        },
+        {
+            "x": 300,
+            "y": 225,
+            "width": 200,
+            "height": 125,
+            "style": "stone",
+            "color": "#d2d6d7"
+        },
+        {
+            "x": 550,
+            "y": 225,
+            "width": 200,
+            "height": 150,
+            "style": "moss",
+            "color": "#b57a00"
+        },
+        {
+            "x": 750,
+            "y": 175,
+            "width": 100,
+            "height": 50,
+            "style": "moss",
+            "color": "#b57a00"
+        },
+        {
+            "x": 900,
+            "y": 275,
+            "width": 75,
+            "height": 25,
+            "style": "moss",
+            "color": "#b57a00"
+        },
+        {
+            "x": 325,
+            "y": 125,
+            "width": 50,
+            "height": 50,
+            "style": "moss",
+            "color": "#b57a00"
+        }
+    ]
+}
