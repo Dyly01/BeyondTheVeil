@@ -30,8 +30,30 @@
         </button>
 
         <button id="loadButton">
-        Load Level
+            Load Level
         </button>
+
+        <!-- Scene selection -->
+        <label>
+            Scene
+            <select id="backgroundSelect"></select>
+        </label>
+
+        <!-- Platform style selection -->
+        <label>
+            Platform
+            <select id="platformStyleSelect"></select>
+        </label>
+
+        <!-- Platform color selection -->
+        <label>
+            Color
+            <input
+                id="platformColorInput"
+                type="color"
+                value="#737d81"
+            >
+        </label>
 
         <button id="saveButton">
             Save
@@ -39,28 +61,41 @@
 
     </div>
 
-        <div id="propertiesPanel">
+
+    <div id="propertiesPanel">
 
         <h3>Platform</h3>
 
         <label>
             X
-            <input id="propertyX" type="number">
+            <input
+                id="propertyX"
+                type="number"
+            >
         </label>
 
         <label>
             Y
-            <input id="propertyY" type="number">
+            <input
+                id="propertyY"
+                type="number"
+            >
         </label>
 
         <label>
             Width
-            <input id="propertyWidth" type="number">
+            <input
+                id="propertyWidth"
+                type="number"
+            >
         </label>
 
         <label>
             Height
-            <input id="propertyHeight" type="number">
+            <input
+                id="propertyHeight"
+                type="number"
+            >
         </label>
 
         <button id="applyProperties">
@@ -68,6 +103,7 @@
         </button>
 
     </div>
+
 
     <input
         type="file"
@@ -80,7 +116,10 @@
     <canvas id="editorCanvas"></canvas>
 
 
-    <script type="module" src="./js/editor.js"></script>
+    <script
+        type="module"
+        src="./js/editor.js"
+    ></script>
 
 </body>
 

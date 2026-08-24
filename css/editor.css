@@ -10,6 +10,10 @@ body {
 }
 
 
+/* ============================================================
+   TOOLBAR
+   ============================================================ */
+
 #toolbar {
 
     position: fixed;
@@ -22,8 +26,45 @@ body {
     display: flex;
 
     gap: 5px;
+
+    align-items: center;
+
+    padding: 8px;
+
+    background: rgba(18, 31, 34, 0.9);
+
+    color: #e4f0dc;
+
+    font-size: 13px;
+
+    border-radius: 4px;
+
 }
 
+
+#toolbar label {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 5px;
+
+}
+
+
+#toolbar select,
+#toolbar input,
+#toolbar button {
+
+    font: inherit;
+
+}
+
+
+/* ============================================================
+   BUTTONS
+   ============================================================ */
 
 button {
 
@@ -34,6 +75,28 @@ button {
     cursor: pointer;
 
 }
+
+
+/* ============================================================
+   COLOR INPUT
+   ============================================================ */
+
+#platformColorInput {
+
+    width: 38px;
+
+    height: 30px;
+
+    padding: 2px;
+
+    cursor: pointer;
+
+}
+
+
+/* ============================================================
+   PROPERTIES PANEL
+   ============================================================ */
 
 #propertiesPanel {
 
@@ -117,5 +180,22 @@ button {
     padding: 7px;
 
     cursor: pointer;
+
+}
+
+
+/* ============================================================
+   RESPONSIVE TOOLBAR
+   ============================================================ */
+
+@media (max-width: 900px) {
+
+    #toolbar {
+
+        flex-wrap: wrap;
+
+        max-width: calc(100vw - 36px);
+
+    }
 
 }

@@ -1,3 +1,11 @@
+import {
+    BACKGROUNDS,
+    PLATFORM_STYLES,
+    drawBackground,
+    drawPlatform
+} from "./graphics.js";
+
+
 // ============================================================
 // CANVAS SETUP
 // ============================================================
@@ -83,6 +91,261 @@ let spawn = {
 
 
 // ============================================================
+// VISUAL DESIGN CONTROLS
+// ============================================================
+
+const backgroundSelect =
+    document.getElementById(
+        "backgroundSelect"
+    );
+
+
+const platformStyleSelect =
+    document.getElementById(
+        "platformStyleSelect"
+    );
+
+
+const platformColorInput =
+    document.getElementById(
+        "platformColorInput"
+    );
+
+
+// Populate background selection
+
+for (
+    const [value, label]
+    of Object.entries(BACKGROUNDS)
+) {
+
+    backgroundSelect.add(
+        new Option(
+            label,
+            value
+        )
+    );
+
+}
+
+
+// Populate platform style selection
+
+for (
+    const [value, label]
+    of Object.entries(PLATFORM_STYLES)
+) {
+
+    platformStyleSelect.add(
+        new Option(
+            label,
+            value
+        )
+    );
+
+}
+
+
+// Default values
+
+backgroundSelect.value =
+    "forest";
+
+
+platformStyleSelect.value =
+    "stone";
+
+
+platformColorInput.value =
+    "#737d81";
+
+
+// ============================================================
+// VISUAL DESIGN FUNCTIONS
+// ============================================================
+
+function applyPlatformDesign() {
+
+    if (
+        selectedPlatforms.length === 0
+    ) {
+
+        return false;
+
+    }
+
+
+    let changed =
+        false;
+
+
+    const style =
+        platformStyleSelect.value;
+
+
+    const color =
+        platformColorInput.value;
+
+
+    for (
+        const platform
+        of selectedPlatforms
+    ) {
+
+        if (
+            platform.style !== style ||
+            platform.color !== color
+        ) {
+
+            platform.style =
+                style;
+
+            platform.color =
+                color;
+
+            changed =
+                true;
+
+        }
+
+    }
+
+
+    return changed;
+
+}
+
+
+function updateDesignControlsFromSelection() {
+
+    if (
+        selectedPlatforms.length !== 1
+    ) {
+
+        return;
+
+    }
+
+
+    const platform =
+        selectedPlatforms[0];
+
+
+    platformStyleSelect.value =
+        platform.style || "stone";
+
+
+    platformColorInput.value =
+        platform.color || "#737d81";
+
+}
+
+
+// ============================================================
+// BACKGROUND SELECTION
+// ============================================================
+
+backgroundSelect.addEventListener(
+    "change",
+    () => {
+
+        if (!level) {
+
+            return;
+
+        }
+
+
+        const oldBackground =
+            level.background || "forest";
+
+
+        const newBackground =
+            backgroundSelect.value;
+
+
+        if (
+            oldBackground === newBackground
+        ) {
+
+            return;
+
+        }
+
+
+        level.background =
+            newBackground;
+
+
+        saveHistoryState();
+
+    }
+);
+
+
+// ============================================================
+// PLATFORM STYLE SELECTION
+// ============================================================
+
+platformStyleSelect.addEventListener(
+    "change",
+    () => {
+
+        if (
+            selectedPlatforms.length === 0
+        ) {
+
+            return;
+
+        }
+
+
+        const changed =
+            applyPlatformDesign();
+
+
+        if (changed) {
+
+            saveHistoryState();
+
+        }
+
+    }
+);
+
+
+// ============================================================
+// PLATFORM COLOR SELECTION
+// ============================================================
+
+platformColorInput.addEventListener(
+    "change",
+    () => {
+
+        if (
+            selectedPlatforms.length === 0
+        ) {
+
+            return;
+
+        }
+
+
+        const changed =
+            applyPlatformDesign();
+
+
+        if (changed) {
+
+            saveHistoryState();
+
+        }
+
+    }
+);
+
+
+// ============================================================
 // HISTORY
 // ============================================================
 
@@ -104,6 +367,7 @@ function createEditorSnapshot() {
 
         })
     );
+
 }
 
 
@@ -123,10 +387,13 @@ function saveHistoryState() {
 
     historyIndex =
         history.length - 1;
+
 }
 
 
-function restoreHistoryState(snapshot) {
+function restoreHistoryState(
+    snapshot
+) {
 
     platforms =
         JSON.parse(
@@ -159,14 +426,27 @@ function restoreHistoryState(snapshot) {
         level.height;
 
 
+    // Make sure older levels get
+    // the new default background.
+
+    level.background =
+        level.background || "forest";
+
+
+    backgroundSelect.value =
+        level.background;
+
+
     clearSelection();
 
 
     resizingHandle =
         null;
 
+
     isDragging =
         false;
+
 
     originalPlatforms =
         [];
@@ -177,6 +457,7 @@ function restoreHistoryState(snapshot) {
 
     canvas.style.cursor =
         "default";
+
 }
 
 
@@ -187,6 +468,7 @@ function undo() {
     ) {
 
         return;
+
     }
 
 
@@ -196,13 +478,19 @@ function undo() {
     restoreHistoryState(
         history[historyIndex]
     );
+
 }
+
 
 function redo() {
 
-    if (historyIndex >= history.length - 1) {
+    if (
+        historyIndex >=
+        history.length - 1
+    ) {
 
         return;
+
     }
 
 
@@ -239,6 +527,7 @@ document.addEventListener(
         if (isTyping) {
 
             return;
+
         }
 
 
@@ -254,6 +543,7 @@ document.addEventListener(
             deleteSelectedPlatforms();
 
             return;
+
         }
 
 
@@ -261,7 +551,7 @@ document.addEventListener(
         // UNDO
         // ----------------------------------------------------
 
-       if (
+        if (
             event.ctrlKey &&
             event.key.toLowerCase() === "z" &&
             !event.shiftKey
@@ -270,11 +560,14 @@ document.addEventListener(
             undo();
 
             return;
+
         }
+
 
         // ----------------------------------------------------
         // REDO
         // ----------------------------------------------------
+
         if (
             event.ctrlKey &&
             event.key.toLowerCase() === "y"
@@ -283,6 +576,7 @@ document.addEventListener(
             redo();
 
             return;
+
         }
 
 
@@ -297,11 +591,18 @@ document.addEventListener(
 
             event.preventDefault();
 
+
             selectAllPlatforms();
+
 
             updatePropertiesPanel();
 
+
+            updateDesignControlsFromSelection();
+
+
             return;
+
         }
 
     }
@@ -332,7 +633,9 @@ document.addEventListener(
 // CAMERA MOVEMENT
 // ============================================================
 
-function updateCamera(deltaTime) {
+function updateCamera(
+    deltaTime
+) {
 
     let moveX = 0;
 
@@ -429,6 +732,7 @@ function updateCamera(deltaTime) {
                 maxY
             )
         );
+
 }
 
 
@@ -446,7 +750,9 @@ function clearSelection() {
 }
 
 
-function selectPlatform(platform) {
+function selectPlatform(
+    platform
+) {
 
     selectedPlatforms = [
         platform
@@ -455,7 +761,9 @@ function selectPlatform(platform) {
 }
 
 
-function togglePlatformSelection(platform) {
+function togglePlatformSelection(
+    platform
+) {
 
     const index =
         selectedPlatforms.indexOf(
@@ -492,7 +800,9 @@ function selectAllPlatforms() {
 }
 
 
-function isPlatformSelected(platform) {
+function isPlatformSelected(
+    platform
+) {
 
     return selectedPlatforms.includes(
         platform
@@ -560,7 +870,9 @@ document
             currentTool =
                 "erase";
 
+
             clearSelection();
+
 
             updatePropertiesPanel();
 
@@ -577,7 +889,9 @@ document
             currentTool =
                 "spawn";
 
+
             clearSelection();
+
 
             updatePropertiesPanel();
 
@@ -627,6 +941,7 @@ function getPlatformAtPosition(
 
 
     return null;
+
 }
 
 
@@ -660,7 +975,9 @@ function screenToWorld(
 // SNAP TO GRID
 // ============================================================
 
-function snapToGrid(value) {
+function snapToGrid(
+    value
+) {
 
     return Math.round(
         value / GRID_SIZE
@@ -772,6 +1089,7 @@ function getResizeHandle(
 
 
     return null;
+
 }
 
 
@@ -786,6 +1104,7 @@ function deleteSelectedPlatforms() {
     ) {
 
         return;
+
     }
 
 
@@ -845,7 +1164,9 @@ function updateCursor(
         canvas.style.cursor =
             "default";
 
+
         return;
+
     }
 
 
@@ -876,6 +1197,7 @@ function updateCursor(
             canvas.style.cursor =
                 "nwse-resize";
 
+
             return;
 
         }
@@ -887,6 +1209,7 @@ function updateCursor(
 
             canvas.style.cursor =
                 "nesw-resize";
+
 
             return;
 
@@ -900,6 +1223,7 @@ function updateCursor(
             canvas.style.cursor =
                 "nesw-resize";
 
+
             return;
 
         }
@@ -911,6 +1235,7 @@ function updateCursor(
 
             canvas.style.cursor =
                 "nwse-resize";
+
 
             return;
 
@@ -953,6 +1278,7 @@ function updateCursor(
         canvas.style.cursor =
             "grab";
 
+
         return;
 
     }
@@ -960,6 +1286,7 @@ function updateCursor(
 
     canvas.style.cursor =
         "default";
+
 }
 
 
@@ -998,7 +1325,11 @@ canvas.addEventListener(
                 );
 
 
+            saveHistoryState();
+
+
             return;
+
         }
 
 
@@ -1043,6 +1374,7 @@ canvas.addEventListener(
 
 
             return;
+
         }
 
 
@@ -1099,7 +1431,9 @@ canvas.addEventListener(
 
 
                 return;
+
             }
+
         }
 
 
@@ -1132,16 +1466,17 @@ canvas.addEventListener(
                 updatePropertiesPanel();
 
 
+                updateDesignControlsFromSelection();
+
+
                 return;
+
             }
 
 
             // ------------------------------------------------
             // NORMAL CLICK
             // ------------------------------------------------
-
-            // If the platform is not already
-            // selected, replace the selection.
 
             if (
                 !isPlatformSelected(
@@ -1157,6 +1492,9 @@ canvas.addEventListener(
 
 
             updatePropertiesPanel();
+
+
+            updateDesignControlsFromSelection();
 
 
             // ------------------------------------------------
@@ -1210,6 +1548,7 @@ canvas.addEventListener(
 
 
             return;
+
         }
 
 
@@ -1222,6 +1561,7 @@ canvas.addEventListener(
         ) {
 
             return;
+
         }
 
 
@@ -1314,7 +1654,9 @@ function updatePropertiesPanel() {
         propertiesPanel.style.display =
             "none";
 
+
         return;
+
     }
 
 
@@ -1355,6 +1697,7 @@ function applyPropertyChanges() {
     ) {
 
         return;
+
     }
 
 
@@ -1394,6 +1737,7 @@ function applyPropertyChanges() {
     ) {
 
         return;
+
     }
 
 
@@ -1497,6 +1841,7 @@ canvas.addEventListener(
 
 
             return;
+
         }
 
 
@@ -1556,6 +1901,7 @@ canvas.addEventListener(
                     platform.x =
                         mouseX;
 
+
                     platform.width =
                         newWidth;
 
@@ -1568,6 +1914,7 @@ canvas.addEventListener(
 
                     platform.y =
                         mouseY;
+
 
                     platform.height =
                         newHeight;
@@ -1608,6 +1955,7 @@ canvas.addEventListener(
                     platform.y =
                         mouseY;
 
+
                     platform.height =
                         newHeight;
 
@@ -1636,6 +1984,7 @@ canvas.addEventListener(
 
                     platform.x =
                         mouseX;
+
 
                     platform.width =
                         newWidth;
@@ -1695,6 +2044,7 @@ canvas.addEventListener(
 
 
             return;
+
         }
 
 
@@ -1742,6 +2092,7 @@ canvas.addEventListener(
 
 
             return;
+
         }
 
 
@@ -1784,6 +2135,7 @@ canvas.addEventListener(
         ) {
 
             return;
+
         }
 
 
@@ -1842,6 +2194,7 @@ canvas.addEventListener(
 
 
             return;
+
         }
 
 
@@ -1875,6 +2228,7 @@ canvas.addEventListener(
                     changed =
                         true;
 
+
                     break;
 
                 }
@@ -1900,6 +2254,7 @@ canvas.addEventListener(
 
 
             return;
+
         }
 
 
@@ -1915,7 +2270,9 @@ canvas.addEventListener(
             isDragging =
                 false;
 
+
             return;
+
         }
 
 
@@ -1960,7 +2317,13 @@ canvas.addEventListener(
 
                 width,
 
-                height
+                height,
+
+                style:
+                    platformStyleSelect.value,
+
+                color:
+                    platformColorInput.value
 
             });
 
@@ -2056,6 +2419,46 @@ canvas.addEventListener(
             worldY -
             mouseY /
             camera.zoom;
+
+
+        // Keep camera inside world
+
+        const maxX =
+            Math.max(
+                0,
+                editorWorld.width -
+                canvas.width /
+                camera.zoom
+            );
+
+
+        const maxY =
+            Math.max(
+                0,
+                editorWorld.height -
+                canvas.height /
+                camera.zoom
+            );
+
+
+        camera.x =
+            Math.max(
+                0,
+                Math.min(
+                    camera.x,
+                    maxX
+                )
+            );
+
+
+        camera.y =
+            Math.max(
+                0,
+                Math.min(
+                    camera.y,
+                    maxY
+                )
+            );
 
     },
     {
@@ -2174,32 +2577,59 @@ function drawPlatforms() {
     // Normal platforms
     // --------------------------------------------------------
 
-    ctx.fillStyle =
-        "#888";
-
-
     for (
         const platform
         of platforms
     ) {
 
-        ctx.fillRect(
+        // Older level files might not have
+        // style/color yet.
 
-            (platform.x -
-                camera.x) *
-                camera.zoom,
+        const platformToDraw = {
 
-            (platform.y -
-                camera.y) *
-                camera.zoom,
+            ...platform,
 
-            platform.width *
-                camera.zoom,
+            style:
+                platform.style || "stone",
 
-            platform.height *
-                camera.zoom
+            color:
+                platform.color || "#737d81"
 
+        };
+
+
+        /*
+         * drawPlatform() uses world coordinates.
+         *
+         * The editor uses a camera and zoom, so we temporarily
+         * transform the canvas from world space to screen space.
+         */
+
+        ctx.save();
+
+
+        ctx.translate(
+            -camera.x *
+            camera.zoom,
+
+            -camera.y *
+            camera.zoom
         );
+
+
+        ctx.scale(
+            camera.zoom,
+            camera.zoom
+        );
+
+
+        drawPlatform(
+            ctx,
+            platformToDraw
+        );
+
+
+        ctx.restore();
 
     }
 
@@ -2528,9 +2958,43 @@ function draw() {
     );
 
 
+    // --------------------------------------------------------
+    // Background
+    // --------------------------------------------------------
+
+    drawBackground(
+        ctx,
+
+        level?.background ||
+            "forest",
+
+        editorWorld.width,
+
+        editorWorld.height,
+
+        camera.x,
+
+        camera.y
+    );
+
+
+    // --------------------------------------------------------
+    // Grid
+    // --------------------------------------------------------
+
     drawGrid();
 
+
+    // --------------------------------------------------------
+    // Platforms
+    // --------------------------------------------------------
+
     drawPlatforms();
+
+
+    // --------------------------------------------------------
+    // Spawn
+    // --------------------------------------------------------
 
     drawSpawn();
 
@@ -2563,6 +3027,10 @@ function createLevelData() {
                 spawn.y
 
         },
+
+        background:
+            level.background ||
+            "forest",
 
         platforms
 
@@ -2642,6 +3110,7 @@ async function saveLevel() {
 
 
         return;
+
     }
 
 
@@ -2785,11 +3254,48 @@ async function loadLevel() {
 
 
     platforms =
-        level.platforms;
+        level.platforms || [];
 
 
     spawn =
-        level.spawn;
+        level.spawn || {
+
+            x: 0,
+
+            y: 0
+
+        };
+
+
+    // Default for older levels
+
+    level.background =
+        level.background ||
+        "forest";
+
+
+    backgroundSelect.value =
+        level.background;
+
+
+    // Give older platforms the new
+    // default visual properties.
+
+    for (
+        const platform
+        of platforms
+    ) {
+
+        platform.style =
+            platform.style ||
+            "stone";
+
+
+        platform.color =
+            platform.color ||
+            "#737d81";
+
+    }
 
 
     editorWorld.width =
@@ -2817,11 +3323,45 @@ function loadLevelData(
 
 
     platforms =
-        level.platforms;
+        level.platforms || [];
 
 
     spawn =
-        level.spawn;
+        level.spawn || {
+
+            x: 0,
+
+            y: 0
+
+        };
+
+
+    level.background =
+        level.background ||
+        "forest";
+
+
+    backgroundSelect.value =
+        level.background;
+
+
+    // Make old platforms compatible
+
+    for (
+        const platform
+        of platforms
+    ) {
+
+        platform.style =
+            platform.style ||
+            "stone";
+
+
+        platform.color =
+            platform.color ||
+            "#737d81";
+
+    }
 
 
     editorWorld.width =
@@ -2848,6 +3388,10 @@ function loadLevelData(
 
 
     updatePropertiesPanel();
+
+
+    canvas.style.cursor =
+        "default";
 
 
     console.log(
