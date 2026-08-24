@@ -18,18 +18,22 @@ const livesDisplay =
 
 const MAX_LIVES = 5;
 
-const START_LEVEL = "./level-1.json";
+const START_LEVEL =
+    "./level-1.json";
 
 
 // ============================================================
 // STATE
 // ============================================================
 
-let lives = MAX_LIVES;
+let lives =
+    MAX_LIVES;
 
-let gameOver = false;
+let gameOver =
+    false;
 
-let resetting = false;
+let resetting =
+    false;
 
 
 // ============================================================
@@ -46,6 +50,30 @@ function getLives() {
 function isGameOver() {
 
     return gameOver;
+
+}
+
+
+// ============================================================
+// RESET LIVES
+// ============================================================
+
+function resetLives() {
+
+    lives =
+        MAX_LIVES;
+
+    gameOver =
+        false;
+
+    resetting =
+        false;
+
+
+    console.log(
+        "Lives reset:",
+        lives
+    );
 
 }
 
@@ -85,9 +113,11 @@ async function loseLife() {
 
         gameOver = true;
 
+
         console.log(
             "GAME OVER"
         );
+
 
         return;
 
@@ -98,9 +128,7 @@ async function loseLife() {
     // RESPAWN CURRENT LEVEL
     // ========================================================
 
-    spawnPlayer(
-        level
-    );
+    spawnPlayer(level);
 
 }
 
@@ -137,61 +165,6 @@ function updateLives() {
 
 
 // ============================================================
-// COMPLETE GAME RESET
-// ============================================================
-
-async function resetGame() {
-
-    if (resetting) {
-
-        return;
-
-    }
-
-
-    resetting = true;
-
-
-    console.log(
-        "Resetting game..."
-    );
-
-
-    lives =
-        MAX_LIVES;
-
-
-    gameOver =
-        false;
-
-
-    // Load the first level again
-
-    await loadLevel(
-        START_LEVEL
-    );
-
-
-    if (level) {
-
-        spawnPlayer(
-            level
-        );
-
-    }
-
-
-    resetting = false;
-
-
-    console.log(
-        "Game reset."
-    );
-
-}
-
-
-// ============================================================
 // ENTER KEY → RESET AFTER GAME OVER
 // ============================================================
 
@@ -199,9 +172,7 @@ document.addEventListener(
     "keydown",
     (event) => {
 
-        if (
-            !gameOver
-        ) {
+        if (!gameOver) {
 
             return;
 
@@ -223,55 +194,90 @@ document.addEventListener(
 
 
 // ============================================================
-// DRAW LIVES
+// RESET AFTER GAME OVER
 // ============================================================
 
-function drawLives(ctx) {
+async function resetGame() {
 
-    if (
-        gameOver
-    ) {
+    if (resetting) {
 
         return;
 
     }
 
 
-    ctx.save();
+    resetting = true;
 
 
-    ctx.fillStyle =
-        "white";
+    console.log(
+        "Resetting game..."
+    );
 
 
-    ctx.font =
-        "32px Arial";
+    resetLives();
 
 
-    ctx.textAlign =
-        "left";
+    await loadLevel(
+        START_LEVEL
+    );
 
 
-    ctx.textBaseline =
-        "top";
+    if (level) {
+
+        spawnPlayer(level);
+
+    }
+
+
+    resetting = false;
+
+
+    console.log(
+        "Game reset."
+    );
+
+}
+
+
+// ============================================================
+// DRAW LIVES
+// ============================================================
+
+function drawLives(ctx) {
+
+    if (gameOver) {
+
+        livesDisplay.innerHTML = "";
+
+        return;
+
+    }
+
 
     livesDisplay.innerHTML = "";
 
-    for (let i = 0; i < MAX_LIVES; i++) {
+
+    for (
+        let i = 0;
+        i < MAX_LIVES;
+        i++
+    ) {
 
         const heart =
             document.createElement("span");
 
+
         heart.textContent =
-            i < lives ? "♥" : "♡";
+            i < lives
+                ? "♥"
+                : "♡";
+
 
         livesDisplay.appendChild(
             heart
         );
 
-}
-
-    ctx.restore();
+    }
 
 }
 
@@ -285,9 +291,7 @@ function drawGameOver(
     canvas
 ) {
 
-    if (
-        !gameOver
-    ) {
+    if (!gameOver) {
 
         return;
 
@@ -372,5 +376,6 @@ export {
     loseLife,
     resetGame,
     drawLives,
-    drawGameOver
+    drawGameOver,
+    resetLives
 };

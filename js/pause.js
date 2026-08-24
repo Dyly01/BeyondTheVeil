@@ -2,26 +2,42 @@ let paused = false;
 
 let resetCallback = null;
 
+
+// ============================================================
+// RESET CALLBACK
+// ============================================================
+
 function setResetCallback(callback) {
 
-    resetCallback = callback;
+    resetCallback =
+        callback;
 
 }
 
+
+// ============================================================
+// ELEMENTS
+// ============================================================
+
 const pauseButton =
-    document.getElementById("pauseButton");
+    document.getElementById(
+        "pauseButton"
+    );
 
 const pauseMenu =
-    document.getElementById("pauseMenu");
+    document.getElementById(
+        "pauseMenu"
+    );
 
 const continueButton =
-    document.getElementById("continueButton");
+    document.getElementById(
+        "continueButton"
+    );
 
 const resetButton =
-    document.getElementById("resetButton");
-
-const settingsButton =
-    document.getElementById("settingsButton");
+    document.getElementById(
+        "resetButton"
+    );
 
 
 // ============================================================
@@ -32,7 +48,8 @@ function pauseGame() {
 
     paused = true;
 
-    pauseMenu.style.display = "flex";
+    pauseMenu.style.display =
+        "flex";
 
 }
 
@@ -45,7 +62,8 @@ function continueGame() {
 
     paused = false;
 
-    pauseMenu.style.display = "none";
+    pauseMenu.style.display =
+        "none";
 
 }
 
@@ -69,6 +87,11 @@ function togglePause() {
 
 }
 
+
+// ============================================================
+// ESCAPE
+// ============================================================
+
 document.addEventListener(
     "keydown",
     (event) => {
@@ -87,7 +110,7 @@ document.addEventListener(
 
 
 // ============================================================
-// BUTTONS
+// PAUSE BUTTON
 // ============================================================
 
 pauseButton.addEventListener(
@@ -95,15 +118,56 @@ pauseButton.addEventListener(
     togglePause
 );
 
+
+// ============================================================
+// CONTINUE BUTTON
+// ============================================================
+
+continueButton.addEventListener(
+    "click",
+    continueGame
+);
+
+
+// ============================================================
+// RESET BUTTON
+// ============================================================
+
 resetButton.addEventListener(
     "click",
     async () => {
 
-        // Pause-Menü sofort schließen
-        paused = false;
-        pauseMenu.style.display = "none";
+        // ----------------------------------------------------
+        // Close pause menu immediately
+        // ----------------------------------------------------
 
-        // Reset an das Spiel weitergeben
+        paused = false;
+
+        pauseMenu.style.display =
+            "none";
+
+
+        // ----------------------------------------------------
+        // Close settings menu
+        // ----------------------------------------------------
+
+        const settingsMenu =
+            document.getElementById(
+                "settingsMenu"
+            );
+
+        if (settingsMenu) {
+
+            settingsMenu.style.display =
+                "none";
+
+        }
+
+
+        // ----------------------------------------------------
+        // Execute reset
+        // ----------------------------------------------------
+
         if (resetCallback) {
 
             await resetCallback();
@@ -111,12 +175,6 @@ resetButton.addEventListener(
         }
 
     }
-);
-
-
-continueButton.addEventListener(
-    "click",
-    continueGame
 );
 
 
@@ -130,6 +188,10 @@ function isPaused() {
 
 }
 
+
+// ============================================================
+// EXPORT
+// ============================================================
 
 export {
     pauseGame,

@@ -208,3 +208,57 @@ canvas {
 #pauseButton:active {
     transform: scale(0.95);
 }
+
+#settingsMenu {
+    position: fixed;
+
+    inset: 0;
+
+    display: none;
+
+    align-items: center;
+    justify-content: center;
+
+    background: rgba(0, 0, 0, 0.65);
+
+    z-index: 3000;
+}
+
+
+#settingsMenuContent {
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    gap: 15px;
+
+    min-width: 300px;
+
+    padding: 40px;
+
+    background: rgba(20, 20, 20, 0.95);
+
+    border-radius: 12px;
+}
+
+
+#settingsMenuContent h1 {
+    margin: 0 0 20px 0;
+
+    color: white;
+
+    font-size: 42px;
+}
+
+
+#settingsMenuContent button {
+    width: 220px;
+
+    padding: 12px;
+
+    font-size: 20px;
+
+    cursor: pointer;
+}

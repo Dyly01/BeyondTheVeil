@@ -13,8 +13,7 @@ import {
 import {
     level,
     loadLevel,
-    changeLevel,
-    getCurrentLevelFile
+    changeLevel
 } from "./level.js";
 
 import {
@@ -40,7 +39,8 @@ import {
     updateLives,
     isGameOver,
     drawLives,
-    drawGameOver
+    drawGameOver,
+    resetLives
 } from "./lives.js";
 
 
@@ -49,14 +49,10 @@ import {
 // ============================================================
 
 const canvas =
-    document.getElementById(
-        "gameCanvas"
-    );
+    document.getElementById("gameCanvas");
 
 const ctx =
-    canvas.getContext(
-        "2d"
-    );
+    canvas.getContext("2d");
 
 
 // ============================================================
@@ -73,12 +69,10 @@ function resizeCanvas() {
 
 }
 
-
 window.addEventListener(
     "resize",
     resizeCanvas
 );
-
 
 resizeCanvas();
 
@@ -90,49 +84,120 @@ resizeCanvas();
 let changingLevel = false;
 
 
-async function resetLevel() {
+// ============================================================
+// COMPLETE GAME RESET
+// ============================================================
 
-    if (!level || changingLevel) {
+async function resetGame() {
+
+    if (changingLevel) {
+
         return;
+
     }
+
+    console.log("Full game reset");
 
     changingLevel = true;
 
-    const currentLevelFile =
-        getCurrentLevelFile();
 
-    await loadLevel(
-        currentLevelFile
-    );
+    // --------------------------------------------------------
+    // Reset lives and game-over state
+    // --------------------------------------------------------
 
-    if (level) {
+    resetLives();
 
-        spawnPlayer(level);
 
-        camera.x = 0;
-        camera.y = 0;
+    // --------------------------------------------------------
+    // Close pause menu
+    // --------------------------------------------------------
+
+    const pauseMenu =
+        document.getElementById("pauseMenu");
+
+    if (pauseMenu) {
+
+        pauseMenu.style.display = "none";
 
     }
 
+
+    // --------------------------------------------------------
+    // Close settings menu
+    // --------------------------------------------------------
+
+    const settingsMenu =
+        document.getElementById("settingsMenu");
+
+    if (settingsMenu) {
+
+        settingsMenu.style.display = "none";
+
+    }
+
+
+    // --------------------------------------------------------
+    // Load first level
+    // --------------------------------------------------------
+
+    const success =
+        await loadLevel("./level-1.json");
+
+
+    if (
+        !success ||
+        !level
+    ) {
+
+        console.error(
+            "Could not reset game: level-1 failed to load."
+        );
+
+        changingLevel = false;
+
+        return;
+
+    }
+
+
+    // --------------------------------------------------------
+    // Spawn player
+    // --------------------------------------------------------
+
+    spawnPlayer(level);
+
+
+    // --------------------------------------------------------
+    // Reset player movement
+    // --------------------------------------------------------
+
+    player.velocityX = 0;
+    player.velocityY = 0;
+
+
+    // --------------------------------------------------------
+    // Reset camera
+    // --------------------------------------------------------
+
+    camera.x = 0;
+    camera.y = 0;
+
+
     changingLevel = false;
+
+    console.log("Game reset complete");
+
 }
 
+
+// ============================================================
+// CONNECT RESET BUTTON
+// ============================================================
+
 setResetCallback(
-    resetLevel
+    resetGame
 );
 
-const resetButton =
-    document.getElementById("resetButton");
-
-resetButton.addEventListener("click", async () => {
-
-    // Pause-Menü sofort schließen
-    pauseMenu.classList.remove("active");
-
-    // Danach Level zurücksetzen
-    await resetLevel();
-
-});
 
 // ============================================================
 // CHECK DOORS
@@ -152,8 +217,7 @@ async function checkDoors() {
 
 
     for (
-        const door
-        of level.doors
+        const door of level.doors
     ) {
 
         if (
@@ -173,9 +237,7 @@ async function checkDoors() {
             )
         ) {
 
-            await enterDoor(
-                door
-            );
+            await enterDoor(door);
 
             return;
 
@@ -190,21 +252,16 @@ async function checkDoors() {
 // ENTER DOOR
 // ============================================================
 
-async function enterDoor(
-    door
-) {
+async function enterDoor(door) {
 
-    if (
-        changingLevel
-    ) {
+    if (changingLevel) {
 
         return;
 
     }
 
 
-    changingLevel =
-        true;
+    changingLevel = true;
 
 
     const targetLevel =
@@ -218,9 +275,7 @@ async function enterDoor(
 
 
     const success =
-        await changeLevel(
-            targetLevel
-        );
+        await changeLevel(targetLevel);
 
 
     if (
@@ -228,37 +283,20 @@ async function enterDoor(
         level
     ) {
 
-        // ----------------------------------------------------
-        // Spawn player in new level
-        // ----------------------------------------------------
+        spawnPlayer(level);
 
-        spawnPlayer(
-            level
-        );
-
-
-        // ----------------------------------------------------
-        // Reset camera
-        // ----------------------------------------------------
 
         camera.x = 0;
-
         camera.y = 0;
 
 
-        // ----------------------------------------------------
-        // Reset movement
-        // ----------------------------------------------------
-
         player.velocityX = 0;
-
         player.velocityY = 0;
 
     }
 
 
-    changingLevel =
-        false;
+    changingLevel = false;
 
 }
 
@@ -267,17 +305,13 @@ async function enterDoor(
 // UPDATE
 // ============================================================
 
-function update(
-    deltaTime
-) {
+function update(deltaTime) {
 
     // --------------------------------------------------------
     // Game Over
     // --------------------------------------------------------
 
-    if (
-        isGameOver()
-    ) {
+    if (isGameOver()) {
 
         updateInput();
 
@@ -289,15 +323,15 @@ function update(
     // --------------------------------------------------------
     // Paused
     // --------------------------------------------------------
-    if (
-       isPaused() 
-    ) {
+
+    if (isPaused()) {
 
         updateInput();
 
         return;
 
     }
+
 
     // --------------------------------------------------------
     // Level transition / missing level
@@ -317,9 +351,7 @@ function update(
     // Player
     // --------------------------------------------------------
 
-    updatePlayer(
-        deltaTime
-    );
+    updatePlayer(deltaTime);
 
 
     // --------------------------------------------------------
@@ -369,10 +401,6 @@ function draw() {
     );
 
 
-    // --------------------------------------------------------
-    // No level loaded
-    // --------------------------------------------------------
-
     if (!level) {
 
         return;
@@ -400,7 +428,6 @@ function draw() {
 
     ctx.save();
 
-
     ctx.translate(
         -camera.x,
         -camera.y
@@ -412,14 +439,11 @@ function draw() {
     // ========================================================
 
     if (
-        Array.isArray(
-            level.platforms
-        )
+        Array.isArray(level.platforms)
     ) {
 
         for (
-            const platform
-            of level.platforms
+            const platform of level.platforms
         ) {
 
             drawPlatform(
@@ -437,14 +461,11 @@ function draw() {
     // ========================================================
 
     if (
-        Array.isArray(
-            level.doors
-        )
+        Array.isArray(level.doors)
     ) {
 
         for (
-            const door
-            of level.doors
+            const door of level.doors
         ) {
 
             if (!door) {
@@ -468,13 +489,9 @@ function draw() {
     // PLAYER
     // ========================================================
 
-    if (
-        !isGameOver()
-    ) {
+    if (!isGameOver()) {
 
-        drawPlayer(
-            ctx
-        );
+        drawPlayer(ctx);
 
     }
 
@@ -490,10 +507,7 @@ function draw() {
     // UI
     // ========================================================
 
-    drawLives(
-        ctx
-    );
-
+    drawLives(ctx);
 
     drawGameOver(
         ctx,
@@ -510,33 +524,25 @@ function draw() {
 const FIXED_DT =
     1 / 60;
 
-
 const MAX_FRAME_TIME =
     0.1;
 
-
 let lastTime =
     performance.now();
-
 
 let accumulator =
     0;
 
 
-function gameLoop(
-    currentTime
-) {
+function gameLoop(currentTime) {
 
     const frameTime =
         Math.min(
-
             (
                 currentTime -
                 lastTime
             ) / 1000,
-
             MAX_FRAME_TIME
-
         );
 
 
@@ -549,14 +555,10 @@ function gameLoop(
 
 
     while (
-        accumulator >=
-        FIXED_DT
+        accumulator >= FIXED_DT
     ) {
 
-        update(
-            FIXED_DT
-        );
-
+        update(FIXED_DT);
 
         accumulator -=
             FIXED_DT;
@@ -595,15 +597,12 @@ async function startGame() {
             "Game could not start because the level failed to load."
         );
 
-
         return;
 
     }
 
 
-    spawnPlayer(
-        level
-    );
+    spawnPlayer(level);
 
 
     requestAnimationFrame(
