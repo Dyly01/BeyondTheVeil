@@ -7,13 +7,22 @@
         "y": 25
     },
     "background": "forest",
-    "door": {
-        "x": 900,
-        "y": 225,
-        "width": 60,
-        "height": 100,
-        "level": "./level-2.json"
-    },
+    "doors": [
+        {
+            "x": 300,
+            "y": 300,
+            "width": 60,
+            "height": 100,
+            "level": "./level-2.json"
+        },
+        {
+            "x": 1250,
+            "y": 125,
+            "width": 60,
+            "height": 100,
+            "level": "./level-3.json"
+        }
+    ],
     "platforms": [
         {
             "x": 0,
@@ -58,14 +67,14 @@
             "height": 100
         },
         {
-            "x": 1125,
-            "y": 200,
-            "width": 50,
-            "height": 25
+            "x": 1100,
+            "y": 225,
+            "width": 300,
+            "height": 50
         },
         {
             "x": 225,
-            "y": 225,
+            "y": 400,
             "width": 200,
             "height": 75
         }

@@ -91,7 +91,10 @@ let spawn = {
 
 };
 
-let door = null;
+
+// Multiple doors are supported.
+
+let doors = [];
 
 
 // ============================================================
@@ -112,7 +115,7 @@ function createEditorSnapshot() {
 
             spawn,
 
-            door,
+            doors,
 
             level
 
@@ -158,10 +161,10 @@ function restoreHistoryState(snapshot) {
         );
 
 
-    door =
+    doors =
         JSON.parse(
             JSON.stringify(
-                snapshot.door
+                snapshot.doors || []
             )
         );
 
@@ -192,6 +195,9 @@ function restoreHistoryState(snapshot) {
 
     originalPlatforms =
         [];
+
+    originalDoor =
+        null;
 
 
     updatePropertiesPanel();
@@ -300,7 +306,7 @@ document.addEventListener(
 
             if (selectedDoor) {
 
-                deleteDoor();
+                deleteSelectedDoor();
 
                 return;
 
@@ -495,19 +501,19 @@ function updateCamera(deltaTime) {
 
 
 // ============================================================
-// PLATFORM SELECTION
+// PLATFORM / DOOR SELECTION
 // ============================================================
 
 let selectedPlatforms = [];
 
-let selectedDoor = false;
+let selectedDoor = null;
 
 
 function clearSelection() {
 
     selectedPlatforms = [];
 
-    selectedDoor = false;
+    selectedDoor = null;
 
 }
 
@@ -518,7 +524,9 @@ function selectPlatform(platform) {
         platform
     ];
 
-    selectedDoor = false;
+    selectedDoor = null;
+
+    updateDoorControls();
 
 }
 
@@ -550,7 +558,9 @@ function togglePlatformSelection(platform) {
     }
 
 
-    selectedDoor = false;
+    selectedDoor = null;
+
+    updateDoorControls();
 
 }
 
@@ -560,7 +570,9 @@ function selectAllPlatforms() {
     selectedPlatforms =
         [...platforms];
 
-    selectedDoor = false;
+    selectedDoor = null;
+
+    updateDoorControls();
 
 }
 
@@ -578,7 +590,7 @@ function isPlatformSelected(platform) {
 // DOOR SELECTION
 // ============================================================
 
-function selectDoor() {
+function selectDoor(door) {
 
     if (!door) {
 
@@ -587,7 +599,8 @@ function selectDoor() {
     }
 
 
-    selectedDoor = true;
+    selectedDoor =
+        door;
 
     selectedPlatforms = [];
 
@@ -597,20 +610,53 @@ function selectDoor() {
 }
 
 
-function deleteDoor() {
+function deleteSelectedDoor() {
 
-    if (!door) {
+    if (!selectedDoor) {
 
         return;
 
     }
 
 
-    door = null;
+    const index =
+        doors.indexOf(
+            selectedDoor
+        );
 
-    selectedDoor = false;
+
+    if (
+        index === -1
+    ) {
+
+        selectedDoor =
+            null;
+
+        return;
+
+    }
+
+
+    doors.splice(
+        index,
+        1
+    );
+
+
+    selectedDoor =
+        null;
+
+
+    originalDoor =
+        null;
+
+
+    isDragging =
+        false;
+
 
     updateDoorControls();
+
 
     saveHistoryState();
 
@@ -644,7 +690,10 @@ let resizingHandle =
 let originalPlatforms =
     [];
 
-let originalDoor = null;
+
+let originalDoor =
+    null;
+
 
 // ============================================================
 // BASIC TOOLS
@@ -660,12 +709,14 @@ document
                 "platform";
 
             selectedDoor =
-                false;
+                null;
 
             canvas.style.cursor =
                 "default";
 
             updatePropertiesPanel();
+
+            updateDoorControls();
 
         }
     );
@@ -857,8 +908,6 @@ if (platformColorInput) {
 // DOOR TOOL / CONTROLS
 // ============================================================
 
-// Create the door tool if it does not already exist.
-
 let doorTool =
     document.getElementById(
         "doorTool"
@@ -906,7 +955,7 @@ doorTool.addEventListener(
 
 
 // ============================================================
-// LEVEL TARGET SELECTOR
+// DOOR LEVEL SELECTOR
 // ============================================================
 
 let doorLevelContainer =
@@ -957,12 +1006,6 @@ if (!doorLevelSelect) {
 
 }
 
-
-// We cannot know every level file automatically
-// from a browser-only editor.
-//
-// These are the standard level filenames.
-// Existing options can still be preserved.
 
 const defaultLevelFiles = [
 
@@ -1032,16 +1075,14 @@ doorLevelSelect.addEventListener(
     "change",
     () => {
 
-        if (
-            !door
-        ) {
+        if (!selectedDoor) {
 
             return;
 
         }
 
 
-        door.level =
+        selectedDoor.level =
             doorLevelSelect.value;
 
 
@@ -1065,15 +1106,16 @@ function updateDoorControls() {
 
 
     doorLevelContainer.style.display =
-        door || currentTool === "door"
+        selectedDoor ||
+        currentTool === "door"
             ? "flex"
             : "none";
 
 
-    if (door) {
+    if (selectedDoor) {
 
         doorLevelSelect.value =
-            door.level ||
+            selectedDoor.level ||
             "./level-2.json";
 
     }
@@ -1128,21 +1170,26 @@ function getDoorAtPosition(
     y
 ) {
 
-    if (!door) {
-
-        return null;
-
-    }
-
-
-    if (
-        x >= door.x &&
-        x <= door.x + door.width &&
-        y >= door.y &&
-        y <= door.y + door.height
+    for (
+        let i = doors.length - 1;
+        i >= 0;
+        i--
     ) {
 
-        return door;
+        const door =
+            doors[i];
+
+
+        if (
+            x >= door.x &&
+            x <= door.x + door.width &&
+            y >= door.y &&
+            y <= door.y + door.height
+        ) {
+
+            return door;
+
+        }
 
     }
 
@@ -1362,23 +1409,41 @@ function updateCursor(
     mouseY
 ) {
 
+    const worldPosition =
+        screenToWorld(
+            mouseX,
+            mouseY
+        );
+
+
     if (
-        selectedDoor
+        selectedDoor &&
+        getDoorAtPosition(
+            worldPosition.x,
+            worldPosition.y
+        ) === selectedDoor
     ) {
 
-        const worldPosition =
-            screenToWorld(
-                mouseX,
-                mouseY
-            );
+        canvas.style.cursor =
+            "grab";
+
+        return;
+
+    }
 
 
-        if (
+    if (
+        currentTool === "door"
+    ) {
+
+        const hoveredDoor =
             getDoorAtPosition(
                 worldPosition.x,
                 worldPosition.y
-            )
-        ) {
+            );
+
+
+        if (hoveredDoor) {
 
             canvas.style.cursor =
                 "grab";
@@ -1468,13 +1533,6 @@ function updateCursor(
     }
 
 
-    const worldPosition =
-        screenToWorld(
-            mouseX,
-            mouseY
-        );
-
-
     if (
         selectedPlatforms.some(
             platform =>
@@ -1559,18 +1617,21 @@ canvas.addEventListener(
             currentTool === "door"
         ) {
 
-            // If a door already exists,
-            // clicking it selects it.
-
-            if (
-                door &&
+            const existingDoor =
                 getDoorAtPosition(
                     worldPosition.x,
                     worldPosition.y
-                )
-            ) {
+                );
 
-                selectDoor();
+
+            // Click existing door
+
+            if (existingDoor) {
+
+                selectDoor(
+                    existingDoor
+                );
+
 
                 dragStart = {
 
@@ -1582,13 +1643,14 @@ canvas.addEventListener(
 
                 };
 
+
                 originalDoor = {
 
                     x:
-                        door.x,
+                        existingDoor.x,
 
                     y:
-                        door.y
+                        existingDoor.y
 
                 };
 
@@ -1597,60 +1659,62 @@ canvas.addEventListener(
                     true;
 
 
-                return;
-
-            }
-
-
-            // Otherwise create a new door.
-
-            if (!door) {
-
-                const doorWidth =
-                    60;
-
-                const doorHeight =
-                    100;
-
-
-                door = {
-
-                    x:
-                        snapToGrid(
-                            worldPosition.x
-                        ),
-
-                    y:
-                        snapToGrid(
-                            worldPosition.y
-                        ),
-
-                    width:
-                        doorWidth,
-
-                    height:
-                        doorHeight,
-
-                    level:
-                        doorLevelSelect.value ||
-                        "./level-2.json"
-
-                };
-
-
-                selectedDoor =
-                    true;
-
-
-                updateDoorControls();
-
-
-                saveHistoryState();
+                canvas.style.cursor =
+                    "grabbing";
 
 
                 return;
 
             }
+
+
+            // Create new door
+
+            const doorWidth =
+                60;
+
+            const doorHeight =
+                100;
+
+
+            const newDoor = {
+
+                x:
+                    snapToGrid(
+                        worldPosition.x
+                    ),
+
+                y:
+                    snapToGrid(
+                        worldPosition.y
+                    ),
+
+                width:
+                    doorWidth,
+
+                height:
+                    doorHeight,
+
+                level:
+                    doorLevelSelect.value ||
+                    "./level-2.json"
+
+            };
+
+
+            doors.push(
+                newDoor
+            );
+
+
+            selectedDoor =
+                newDoor;
+
+
+            updateDoorControls();
+
+
+            saveHistoryState();
 
 
             return;
@@ -1666,17 +1730,49 @@ canvas.addEventListener(
             currentTool === "erase"
         ) {
 
-            // Check door first.
-
-            if (
-                door &&
+            const clickedDoor =
                 getDoorAtPosition(
                     worldPosition.x,
                     worldPosition.y
-                )
-            ) {
+                );
 
-                deleteDoor();
+
+            if (clickedDoor) {
+
+                const index =
+                    doors.indexOf(
+                        clickedDoor
+                    );
+
+
+                if (
+                    index !== -1
+                ) {
+
+                    doors.splice(
+                        index,
+                        1
+                    );
+
+
+                    if (
+                        selectedDoor ===
+                        clickedDoor
+                    ) {
+
+                        selectedDoor =
+                            null;
+
+                    }
+
+
+                    updateDoorControls();
+
+
+                    saveHistoryState();
+
+                }
+
 
                 return;
 
@@ -1724,15 +1820,19 @@ canvas.addEventListener(
         // SELECT DOOR
         // ====================================================
 
-        if (
-            door &&
+        const clickedDoor =
             getDoorAtPosition(
                 worldPosition.x,
                 worldPosition.y
-            )
-        ) {
+            );
 
-            selectDoor();
+
+        if (clickedDoor) {
+
+            selectDoor(
+                clickedDoor
+            );
+
 
             dragStart = {
 
@@ -1744,13 +1844,14 @@ canvas.addEventListener(
 
             };
 
+
             originalDoor = {
 
                 x:
-                    door.x,
+                    clickedDoor.x,
 
                 y:
-                    door.y
+                    clickedDoor.y
 
             };
 
@@ -1937,6 +2038,9 @@ canvas.addEventListener(
 
 
         updatePropertiesPanel();
+
+
+        updateDoorControls();
 
 
         dragStart = {
@@ -2227,7 +2331,6 @@ canvas.addEventListener(
 
         if (
             selectedDoor &&
-            door &&
             originalDoor
         ) {
 
@@ -2245,12 +2348,12 @@ canvas.addEventListener(
                 );
 
 
-            door.x =
+            selectedDoor.x =
                 originalDoor.x +
                 deltaX;
 
 
-            door.y =
+            selectedDoor.y =
                 originalDoor.y +
                 deltaY;
 
@@ -3196,97 +3299,100 @@ function drawPlatforms() {
 
 
 // ============================================================
-// DRAW DOOR
+// DRAW DOORS
 // ============================================================
 
-function drawEditorDoor() {
+function drawEditorDoors() {
 
-    if (!door) {
+    for (
+        const door
+        of doors
+    ) {
 
-        return;
-
-    }
-
-
-    ctx.save();
+        ctx.save();
 
 
-    ctx.translate(
-        -camera.x * camera.zoom,
-        -camera.y * camera.zoom
-    );
-
-
-    ctx.scale(
-        camera.zoom,
-        camera.zoom
-    );
-
-
-    drawDoor(
-        ctx,
-        door
-    );
-
-
-    ctx.restore();
-
-
-    // Selection border
-
-    if (selectedDoor) {
-
-        const x =
-            (door.x -
-                camera.x) *
-                camera.zoom;
-
-
-        const y =
-            (door.y -
-                camera.y) *
-                camera.zoom;
-
-
-        const width =
-            door.width *
-            camera.zoom;
-
-
-        const height =
-            door.height *
-            camera.zoom;
-
-
-        ctx.strokeStyle =
-            "yellow";
-
-
-        ctx.lineWidth =
-            3;
-
-
-        ctx.strokeRect(
-            x,
-            y,
-            width,
-            height
+        ctx.translate(
+            -camera.x * camera.zoom,
+            -camera.y * camera.zoom
         );
 
 
-        ctx.fillStyle =
-            "white";
-
-
-        ctx.font =
-            "14px Arial";
-
-
-        ctx.fillText(
-            door.level || "No target",
-            x,
-            y - 8
+        ctx.scale(
+            camera.zoom,
+            camera.zoom
         );
+
+
+        drawDoor(
+            ctx,
+            door
+        );
+
+
+        ctx.restore();
+
+
+        // Selection border
+
+        if (
+            selectedDoor === door
+        ) {
+
+            const x =
+                (door.x -
+                    camera.x) *
+                    camera.zoom;
+
+
+            const y =
+                (door.y -
+                    camera.y) *
+                    camera.zoom;
+
+
+            const width =
+                door.width *
+                camera.zoom;
+
+
+            const height =
+                door.height *
+                camera.zoom;
+
+
+            ctx.strokeStyle =
+                "yellow";
+
+
+            ctx.lineWidth =
+                3;
+
+
+            ctx.strokeRect(
+                x,
+                y,
+                width,
+                height
+            );
+
+
+            ctx.fillStyle =
+                "white";
+
+
+            ctx.font =
+                "14px Arial";
+
+
+            ctx.fillText(
+                door.level ||
+                "No target",
+                x,
+                y - 8
+            );
+
+        }
 
     }
 
@@ -3398,7 +3504,7 @@ function draw() {
 
     drawPlatforms();
 
-    drawEditorDoor();
+    drawEditorDoors();
 
     drawSpawn();
 
@@ -3436,9 +3542,9 @@ function createLevelData() {
             level.background ||
             "forest",
 
-        door:
-            door
-                ? {
+        doors:
+            doors.map(
+                door => ({
 
                     x:
                         door.x,
@@ -3456,8 +3562,8 @@ function createLevelData() {
                         door.level ||
                         "./level-2.json"
 
-                }
-                : null,
+                })
+            ),
 
         platforms
 
@@ -3587,7 +3693,7 @@ async function saveLevel() {
 
 
 // ============================================================
-// LOAD LEVEL
+// LOAD LEVEL BUTTON
 // ============================================================
 
 const loadButton =
@@ -3670,6 +3776,7 @@ if (loadButton && levelFileInput) {
     );
 
 }
+
 
 // ============================================================
 // MAIN LEVEL SELECTOR
@@ -3828,6 +3935,8 @@ if (levelSelect) {
     );
 
 }
+
+
 // ============================================================
 // LOAD DEFAULT LEVEL
 // ============================================================
@@ -3872,8 +3981,40 @@ async function loadLevel() {
         };
 
 
-    door =
-        level.door || null;
+    // --------------------------------------------------------
+    // Door compatibility
+    //
+    // New format:
+    //     "doors": [...]
+    //
+    // Old format:
+    //     "door": {...}
+    // --------------------------------------------------------
+
+    if (
+        Array.isArray(
+            level.doors
+        )
+    ) {
+
+        doors =
+            level.doors;
+
+    }
+    else if (
+        level.door
+    ) {
+
+        doors = [
+            level.door
+        ];
+
+    }
+    else {
+
+        doors = [];
+
+    }
 
 
     level.background =
@@ -3883,7 +4024,6 @@ async function loadLevel() {
 
     editorWorld.width =
         level.width;
-
 
     editorWorld.height =
         level.height;
@@ -3904,6 +4044,8 @@ async function loadLevel() {
 
     }
 
+
+    clearSelection();
 
     updateDoorControls();
 
@@ -3943,8 +4085,34 @@ function loadLevelData(
         };
 
 
-    door =
-        level.door || null;
+    // --------------------------------------------------------
+    // Door compatibility
+    // --------------------------------------------------------
+
+    if (
+        Array.isArray(
+            level.doors
+        )
+    ) {
+
+        doors =
+            level.doors;
+
+    }
+    else if (
+        level.door
+    ) {
+
+        doors = [
+            level.door
+        ];
+
+    }
+    else {
+
+        doors = [];
+
+    }
 
 
     level.background =
@@ -3976,6 +4144,10 @@ function loadLevelData(
 
     originalPlatforms =
         [];
+
+
+    originalDoor =
+        null;
 
 
     isDragging =
@@ -4043,15 +4215,27 @@ function gameLoop(
 
 async function startEditor() {
 
-    await loadLevel();
+    try {
+
+        await loadLevel();
 
 
-    saveHistoryState();
+        saveHistoryState();
 
 
-    requestAnimationFrame(
-        gameLoop
-    );
+        requestAnimationFrame(
+            gameLoop
+        );
+
+    }
+    catch (error) {
+
+        console.error(
+            "Failed to start editor:",
+            error
+        );
+
+    }
 
 }
 

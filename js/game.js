@@ -11,12 +11,18 @@ import {
     changeLevel
 } from "./level.js";
 
-import { updateInput } from "./input.js";
+import {
+    updateInput
+} from "./input.js";
 
 import {
     camera,
     updateCamera
 } from "./camera.js";
+
+import {
+    isColliding
+} from "./physics.js";
 
 import {
     drawBackground,
@@ -25,15 +31,23 @@ import {
 } from "./graphics.js";
 
 
+// ============================================================
+// CANVAS
+// ============================================================
+
 const canvas =
-    document.getElementById("gameCanvas");
+    document.getElementById(
+        "gameCanvas"
+    );
 
 const ctx =
-    canvas.getContext("2d");
+    canvas.getContext(
+        "2d"
+    );
 
 
 // ============================================================
-// CANVAS
+// RESIZE
 // ============================================================
 
 function resizeCanvas() {
@@ -46,10 +60,12 @@ function resizeCanvas() {
 
 }
 
+
 window.addEventListener(
     "resize",
     resizeCanvas
 );
+
 
 resizeCanvas();
 
@@ -61,68 +77,65 @@ resizeCanvas();
 let changingLevel = false;
 
 
-// Check if the player is touching the level door
-function isPlayerTouchingDoor() {
+// ============================================================
+// CHECK DOORS
+// ============================================================
+
+async function checkDoors() {
 
     if (
         !level ||
-        !level.door
+        !Array.isArray(level.doors) ||
+        changingLevel
     ) {
 
-        return false;
+        return;
 
     }
 
 
-    const door =
-        level.door;
+    for (
+        const door
+        of level.doors
+    ) {
+
+        if (
+            !door ||
+            !door.level
+        ) {
+
+            continue;
+
+        }
 
 
-    return (
-        player.x < door.x + door.width &&
-        player.x + player.width > door.x &&
-        player.y < door.y + door.height &&
-        player.y + player.height > door.y
-    );
+        if (
+            isColliding(
+                player,
+                door
+            )
+        ) {
+
+            await enterDoor(
+                door
+            );
+
+            return;
+
+        }
+
+    }
 
 }
 
 
-// Change to the level specified by the door
-async function tryLevelTransition() {
+// ============================================================
+// ENTER DOOR
+// ============================================================
 
-    if (
-        changingLevel ||
-        !level ||
-        !level.door
-    ) {
+async function enterDoor(door) {
 
-        return;
-
-    }
-
-
-    if (
-        !isPlayerTouchingDoor()
-    ) {
-
-        return;
-
-    }
-
-
-    const targetLevel =
-        level.door.level ||
-        level.door.target ||
-        level.door.nextLevel;
-
-
-    if (!targetLevel) {
-
-        console.warn(
-            "Door has no target level:",
-            level.door
-        );
+    if (changingLevel) {
 
         return;
 
@@ -133,23 +146,50 @@ async function tryLevelTransition() {
         true;
 
 
+    const targetLevel =
+        door.level;
+
+
+    console.log(
+        "Entering door:",
+        targetLevel
+    );
+
+
     const success =
         await changeLevel(
             targetLevel
         );
 
 
-    if (success) {
+    if (
+        success &&
+        level
+    ) {
 
-        spawnPlayer(level);
+        // ----------------------------------------------------
+        // Spawn player at new level
+        // ----------------------------------------------------
+
+        spawnPlayer(
+            level
+        );
+
+
+        // ----------------------------------------------------
+        // Reset camera
+        // ----------------------------------------------------
 
         camera.x = 0;
         camera.y = 0;
 
-        console.log(
-            "Transitioned to:",
-            targetLevel
-        );
+
+        // ----------------------------------------------------
+        // Reset player movement
+        // ----------------------------------------------------
+
+        player.velocityX = 0;
+        player.velocityY = 0;
 
     }
 
@@ -166,14 +206,45 @@ async function tryLevelTransition() {
 
 function update(deltaTime) {
 
-    updatePlayer(deltaTime);
+    if (
+        !level ||
+        changingLevel
+    ) {
+
+        return;
+
+    }
+
+
+    // --------------------------------------------------------
+    // Player
+    // --------------------------------------------------------
+
+    updatePlayer(
+        deltaTime
+    );
+
+
+    // --------------------------------------------------------
+    // Doors
+    // --------------------------------------------------------
+
+    checkDoors();
+
+
+    // --------------------------------------------------------
+    // Camera
+    // --------------------------------------------------------
 
     updateCamera(
         player,
         canvas
     );
 
-    tryLevelTransition();
+
+    // --------------------------------------------------------
+    // Input
+    // --------------------------------------------------------
 
     updateInput();
 
@@ -201,9 +272,9 @@ function draw() {
     }
 
 
-    // --------------------------------------------------------
-    // Background
-    // --------------------------------------------------------
+    // ========================================================
+    // BACKGROUND
+    // ========================================================
 
     drawBackground(
         ctx,
@@ -215,9 +286,9 @@ function draw() {
     );
 
 
-    // --------------------------------------------------------
-    // Camera transformation
-    // --------------------------------------------------------
+    // ========================================================
+    // CAMERA TRANSFORMATION
+    // ========================================================
 
     ctx.save();
 
@@ -228,9 +299,9 @@ function draw() {
     );
 
 
-    // --------------------------------------------------------
-    // Platforms
-    // --------------------------------------------------------
+    // ========================================================
+    // PLATFORMS
+    // ========================================================
 
     for (
         const platform
@@ -245,32 +316,50 @@ function draw() {
     }
 
 
-    // --------------------------------------------------------
-    // Door
-    // --------------------------------------------------------
+    // ========================================================
+    // DOORS
+    // ========================================================
 
-    if (level.door) {
+    if (
+        Array.isArray(
+            level.doors
+        )
+    ) {
 
-        drawDoor(
-            ctx,
-            level.door
-        );
+        for (
+            const door
+            of level.doors
+        ) {
+
+            if (!door) {
+
+                continue;
+
+            }
+
+
+            drawDoor(
+                ctx,
+                door
+            );
+
+        }
 
     }
 
 
-    // --------------------------------------------------------
-    // Player
-    // --------------------------------------------------------
+    // ========================================================
+    // PLAYER
+    // ========================================================
 
     drawPlayer(
         ctx
     );
 
 
-    // --------------------------------------------------------
-    // End camera transformation
-    // --------------------------------------------------------
+    // ========================================================
+    // END CAMERA TRANSFORMATION
+    // ========================================================
 
     ctx.restore();
 
@@ -278,11 +367,12 @@ function draw() {
 
 
 // ============================================================
-// FIXED TIMESTEP GAME LOOP
+// GAME LOOP
 // ============================================================
 
 const FIXED_DT =
     1 / 60;
+
 
 const MAX_FRAME_TIME =
     0.1;
@@ -291,16 +381,25 @@ const MAX_FRAME_TIME =
 let lastTime =
     performance.now();
 
+
 let accumulator =
     0;
 
 
-function gameLoop(currentTime) {
+function gameLoop(
+    currentTime
+) {
 
     const frameTime =
         Math.min(
-            (currentTime - lastTime) / 1000,
+
+            (
+                currentTime -
+                lastTime
+            ) / 1000,
+
             MAX_FRAME_TIME
+
         );
 
 
@@ -313,7 +412,8 @@ function gameLoop(currentTime) {
 
 
     while (
-        accumulator >= FIXED_DT
+        accumulator >=
+        FIXED_DT
     ) {
 
         update(
@@ -343,7 +443,26 @@ function gameLoop(currentTime) {
 
 async function startGame() {
 
-    await loadLevel();
+    const success =
+        await loadLevel(
+            "./level-1.json"
+        );
+
+
+    if (
+        !success ||
+        !level
+    ) {
+
+        console.error(
+            "Game could not start because the level failed to load."
+        );
+
+
+        return;
+
+    }
+
 
     spawnPlayer(
         level

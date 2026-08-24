@@ -1,8 +1,55 @@
 let level = null;
 
-let currentLevelFile = null;
+let currentLevelFile = "./level-1.json";
 
 let isLoadingLevel = false;
+
+
+// ============================================================
+// NORMALIZE LEVEL
+// ============================================================
+
+function normalizeLevel(loadedLevel) {
+
+    // --------------------------------------------------------
+    // Convert old single-door format to multiple doors
+    // --------------------------------------------------------
+
+    if (loadedLevel.door) {
+
+        if (Array.isArray(loadedLevel.door)) {
+
+            loadedLevel.doors =
+                loadedLevel.door;
+
+        }
+        else {
+
+            loadedLevel.doors = [
+                loadedLevel.door
+            ];
+
+        }
+
+        delete loadedLevel.door;
+
+    }
+
+
+    // --------------------------------------------------------
+    // Make sure doors always exists
+    // --------------------------------------------------------
+
+    if (!Array.isArray(loadedLevel.doors)) {
+
+        loadedLevel.doors = [];
+
+    }
+
+
+    return loadedLevel;
+
+}
 
 
 // ============================================================
@@ -12,7 +59,9 @@ let isLoadingLevel = false;
 async function loadLevel(file = "./level-1.json") {
 
     if (isLoadingLevel) {
+
         return false;
+
     }
 
     isLoadingLevel = true;
@@ -20,7 +69,10 @@ async function loadLevel(file = "./level-1.json") {
     try {
 
         const response =
-            await fetch(file);
+            await fetch(
+                file
+            );
+
 
         if (!response.ok) {
 
@@ -31,61 +83,14 @@ async function loadLevel(file = "./level-1.json") {
         }
 
 
-        // Read the response as text first.
-        // This gives us a much better error if the
-        // file contains something other than JSON.
-
-        const text =
-            await response.text();
-
-
-        let loadedLevel;
-
-        try {
-
-            loadedLevel =
-                JSON.parse(text);
-
-        }
-        catch (error) {
-
-            throw new Error(
-                `Invalid JSON in ${file}: ${error.message}`
-            );
-
-        }
-
-
-        // Basic level validation
-
-        if (
-            !loadedLevel ||
-            typeof loadedLevel !== "object"
-        ) {
-
-            throw new Error(
-                `Level file ${file} does not contain a valid level object.`
-            );
-
-        }
-
-
-        if (
-            !loadedLevel.spawn ||
-            !Array.isArray(
-                loadedLevel.platforms
-            )
-        ) {
-
-            throw new Error(
-                `Level file ${file} is missing spawn or platforms.`
-            );
-
-        }
+        const loadedLevel =
+            await response.json();
 
 
         level =
-            loadedLevel;
+            normalizeLevel(
+                loadedLevel
+            );
 
 
         currentLevelFile =
@@ -140,7 +145,9 @@ async function changeLevel(file) {
 
 
     const success =
-        await loadLevel(file);
+        await loadLevel(
+            file
+        );
 
 
     return success;
@@ -175,9 +182,15 @@ function getLevel() {
 // ============================================================
 
 export {
+
     level,
+
     loadLevel,
+
     changeLevel,
+
     getCurrentLevelFile,
+
     getLevel
+
 };
