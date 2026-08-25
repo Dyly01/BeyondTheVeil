@@ -44,9 +44,9 @@ resizeCanvas();
 
 const editorWorld = {
 
-    width: 3000,
+    width: 30000,
 
-    height: 1200
+    height: 12000
 
 };
 

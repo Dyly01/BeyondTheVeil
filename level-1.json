@@ -6,6 +6,17 @@
         "x": 500,
         "y": 25
     },
+
+    "collectibles": {
+        "key": {
+            "x": 600,
+            "y": 200,
+            "width": 30,
+            "height": 40,
+            "collected": false
+        }
+    },
+
     "background": "forest",
     "doors": [
         {
@@ -27,7 +38,8 @@
             "y": 775,
             "width": 60,
             "height": 100,
-            "level": "./level-4.json"
+            "level": "./level-4.json",
+            "requiresKey": true
         }
     ],
     "platforms": [

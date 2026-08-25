@@ -2,16 +2,18 @@ import {
     isKeyDown,
     isKeyPressed
 } from "./input.js";
+
 import {
     gravity,
     resolveHorizontalCollision,
     resolveVerticalCollision
 } from "./physics.js";
-import { level } from "./level.js";
+
+import {
+    level
+} from "./level.js";
 
 
-
-// Player object
 const player = {
 
     x: 0,
@@ -20,156 +22,196 @@ const player = {
     width: 40,
     height: 60,
 
-    // Horizontal movement
+
     velocityX: 0,
     acceleration: 1200,
     maxSpeed: 400,
     friction: 0.8,
 
-    // Vertical movement
+
     velocityY: 0,
     jumpStrength: 750,
 
+
     grounded: false,
 
+
     canDoubleJump: false,
-    doubleJumpUsed: false,
+    doubleJumpUsed: false
+
 };
 
-player.canDoubleJump = true;
 
-// Spawn player at the level's spawn point
 function spawnPlayer(level) {
 
-    player.x = level.spawn.x;
-    player.y = level.spawn.y;
+    player.x =
+        level.spawn.x;
 
-    player.velocityX = 0;
-    player.velocityY = 0;
-    player.grounded = false;
+    player.y =
+        level.spawn.y;
+
+    player.velocityX =
+        0;
+
+    player.velocityY =
+        0;
+
+    player.grounded =
+        false;
+
+    player.doubleJumpUsed =
+        false;
+
 }
 
-// Update player position and handle collisions
-function updatePlayer(deltaTime) {
 
-    // --------------------------------
-    // Horizontal movement inputs
-    // --------------------------------
+function updatePlayer(
+    deltaTime
+) {
 
-    if ((isKeyDown("a") || isKeyDown("ArrowLeft")) && (!isKeyDown("d") && !isKeyDown("ArrowRight"))) 
-    {
-        player.velocityX -= player.acceleration * deltaTime;
+    const left =
+        isKeyDown("a") ||
+        isKeyDown("ArrowLeft");
+
+    const right =
+        isKeyDown("d") ||
+        isKeyDown("ArrowRight");
+
+
+    if (
+        left &&
+        !right
+    ) {
+
+        player.velocityX -=
+            player.acceleration *
+            deltaTime;
+
     }
-    if ((isKeyDown("d") || isKeyDown("ArrowRight")) && (!isKeyDown("a") && !isKeyDown("ArrowLeft")))
-    {
+
+
+    if (
+        right &&
+        !left
+    ) {
 
         player.velocityX +=
-            player.acceleration * deltaTime;
-    }
-    if ((!isKeyDown("a") && !isKeyDown("ArrowLeft") && !isKeyDown("d") && !isKeyDown("ArrowRight")) || (isKeyDown("a") || isKeyDown("ArrowLeft")) && (isKeyDown("d") || isKeyDown("ArrowRight"))) {
+            player.acceleration *
+            deltaTime;
 
-        player.velocityX *= player.friction;
     }
 
-    // --------------------------------
-    // Limit horizontal velocity
-    // --------------------------------
 
-    player.velocityX = Math.max(
-        -player.maxSpeed,
-        Math.min(
-            player.velocityX,
-            player.maxSpeed
-        )
-    );
+    if (
+        (!left && !right) ||
+        (left && right)
+    ) {
+
+        player.velocityX *=
+            player.friction;
+
+    }
 
 
-    // --------------------------------
-    // Jump
-    // --------------------------------
+    player.velocityX =
+        Math.max(
+            -player.maxSpeed,
+            Math.min(
+                player.velocityX,
+                player.maxSpeed
+            )
+        );
+
 
     const jumpPressed =
         isKeyPressed(" ") ||
         isKeyPressed("w") ||
         isKeyPressed("ArrowUp");
 
-    if (jumpPressed) {
 
-        // Normaler Sprung vom Boden
-        if (player.grounded) {
+    if (
+        jumpPressed &&
+        player.grounded
+    ) {
 
-            player.velocityY =
-                -player.jumpStrength;
+        player.velocityY =
+            -player.jumpStrength;
 
-            player.grounded = false;
+        player.grounded =
+            false;
 
-            player.doubleJumpUsed = false;
-
-        }
-
-        // Doppelsprung
-        else if (
-            player.canDoubleJump &&
-            !player.doubleJumpUsed
-        ) {
-
-            player.velocityY =
-                -player.jumpStrength;
-
-            player.doubleJumpUsed = true;
-
-        }
+        player.doubleJumpUsed =
+            false;
 
     }
 
-    // --------------------------------
-    // Gravity
-    // --------------------------------
+    else if (
+        jumpPressed &&
+        !player.grounded &&
+        player.canDoubleJump &&
+        !player.doubleJumpUsed
+    ) {
 
-    player.velocityY += gravity * deltaTime;
+        player.velocityY =
+            -player.jumpStrength;
 
+        player.doubleJumpUsed =
+            true;
 
-    // --------------------------------
-    // Horizontal movement
-    // --------------------------------
-
-    player.x += player.velocityX * deltaTime;
-
-
-    // --------------------------------
-    // Horizontal collision
-    // --------------------------------
-
-    for (const platform of level.platforms) {
-
-        resolveHorizontalCollision(player, platform);
     }
 
 
-    // --------------------------------
-    // Vertical movement
-    // --------------------------------
-
-    player.y += player.velocityY * deltaTime;
+    player.velocityY +=
+        gravity *
+        deltaTime;
 
 
-    // --------------------------------
-    // Vertical collision
-    // --------------------------------
+    player.x +=
+        player.velocityX *
+        deltaTime;
 
-    player.grounded = false;
 
-    for (const platform of level.platforms) {
+    for (
+        const platform of level.platforms
+    ) {
 
-        resolveVerticalCollision(player, platform);
+        resolveHorizontalCollision(
+            player,
+            platform
+        );
+
     }
+
+
+    player.y +=
+        player.velocityY *
+        deltaTime;
+
+
+    player.grounded =
+        false;
+
+
+    for (
+        const platform of level.platforms
+    ) {
+
+        resolveVerticalCollision(
+            player,
+            platform
+        );
+
+    }
+
 }
 
 
-// Draw player on the canvas
-function drawPlayer(ctx) {
+function drawPlayer(
+    ctx
+) {
 
-    ctx.fillStyle = "white";
+    ctx.fillStyle =
+        "white";
 
     ctx.fillRect(
         player.x,
@@ -177,7 +219,9 @@ function drawPlayer(ctx) {
         player.width,
         player.height
     );
+
 }
+
 
 export {
     player,
