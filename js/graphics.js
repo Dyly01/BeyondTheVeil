@@ -6,7 +6,6 @@ const BACKGROUNDS = {
     mountainForest: "Mountain through Forest"
 };
 
-
 const PLATFORM_STYLES = {
     stone: "Stone",
     moss: "Moss",
@@ -25,11 +24,8 @@ function drawBackground(
     cameraY = 0
 ) {
 
-    const width =
-        ctx.canvas.width;
-
-    const height =
-        ctx.canvas.height;
+    const width = ctx.canvas.width;
+    const height = ctx.canvas.height;
 
     const gradient =
         ctx.createLinearGradient(
@@ -168,7 +164,6 @@ function drawBackground(
         height,
         night
     );
-
 }
 
 
@@ -257,7 +252,6 @@ function drawMountainRange(
     ctx.closePath();
 
     ctx.fill();
-
 }
 
 
@@ -270,10 +264,14 @@ function drawTreeLine(
 ) {
 
     const treeColor =
-        night ? "#0c1b24" : "#244b3a";
+        night
+            ? "#0c1b24"
+            : "#244b3a";
 
     const shadowColor =
-        night ? "#142a32" : "#326248";
+        night
+            ? "#142a32"
+            : "#326248";
 
     const baseY =
         height * 0.78;
@@ -308,7 +306,6 @@ function drawTreeLine(
         );
 
     }
-
 }
 
 
@@ -373,21 +370,31 @@ function drawTree(
     ctx.closePath();
 
     ctx.fill();
-
 }
 
 
-function drawGem(ctx, gem) {
+function drawGem(
+    ctx,
+    gem
+) {
+
+    if (!gem) {
+        return;
+    }
+
 
     ctx.save();
+
 
     ctx.translate(
         gem.x + gem.width / 2,
         gem.y + gem.height / 2
     );
 
+
     ctx.fillStyle =
-        "#00eaff";
+        "cyan";
+
 
     ctx.beginPath();
 
@@ -415,125 +422,109 @@ function drawGem(ctx, gem) {
 
     ctx.fill();
 
-    ctx.restore();
 
+    ctx.strokeStyle =
+        "white";
+
+    ctx.lineWidth =
+        2;
+
+    ctx.stroke();
+
+
+    ctx.restore();
 }
 
-function drawDoor(
+
+function drawCrown(
     ctx,
-    door,
-    locked = false
+    crown
 ) {
 
-    if (!door) {
+    if (!crown) {
         return;
     }
 
 
-    ctx.fillStyle =
-        "#382a32";
+    ctx.save();
 
-    ctx.fillRect(
-        door.x,
-        door.y,
-        door.width,
-        door.height
-    );
-
-
-    ctx.strokeStyle =
-        locked
-            ? "#777777"
-            : "#e5d994";
-
-    ctx.lineWidth =
-        4;
-
-    ctx.strokeRect(
-        door.x + 2,
-        door.y + 2,
-        door.width - 4,
-        door.height - 2
-    );
-
-
-    if (locked) {
-
-        drawLock(
-            ctx,
-            door
-        );
-
-    }
-    else {
-
-        ctx.fillStyle =
-            "#e5d994";
-
-        ctx.beginPath();
-
-        ctx.arc(
-            door.x + door.width - 12,
-            door.y + door.height / 2,
-            3,
-            0,
-            Math.PI * 2
-        );
-
-        ctx.fill();
-
-    }
-
-}
-
-
-function drawLock(ctx, door) {
 
     const x =
-        door.x + door.width / 2;
+        crown.x;
 
     const y =
-        door.y + door.height / 2;
+        crown.y;
+
+    const width =
+        crown.width;
+
+    const height =
+        crown.height;
 
 
     ctx.fillStyle =
-        "#777777";
+        "#f4d35e";
 
-    ctx.fillRect(
-        x - 10,
-        y - 2,
-        20,
-        18
-    );
-
-
-    ctx.strokeStyle =
-        "#777777";
-
-    ctx.lineWidth =
-        5;
 
     ctx.beginPath();
 
-    ctx.arc(
+    ctx.moveTo(
         x,
-        y - 3,
-        8,
-        Math.PI,
-        0
+        y + height
     );
+
+    ctx.lineTo(
+        x + width,
+        y + height
+    );
+
+    ctx.lineTo(
+        x + width * 0.85,
+        y + height * 0.35
+    );
+
+    ctx.lineTo(
+        x + width * 0.65,
+        y + height * 0.65
+    );
+
+    ctx.lineTo(
+        x + width * 0.5,
+        y
+    );
+
+    ctx.lineTo(
+        x + width * 0.35,
+        y + height * 0.65
+    );
+
+    ctx.lineTo(
+        x + width * 0.15,
+        y + height * 0.35
+    );
+
+    ctx.closePath();
+
+    ctx.fill();
+
+
+    ctx.strokeStyle =
+        "#b8860b";
+
+    ctx.lineWidth =
+        2;
 
     ctx.stroke();
 
 
     ctx.fillStyle =
-        "#382a32";
+        "#e63946";
 
     ctx.beginPath();
 
     ctx.arc(
-        x,
-        y + 6,
+        x + width * 0.3,
+        y + height * 0.72,
         3,
         0,
         Math.PI * 2
@@ -541,6 +532,115 @@ function drawLock(ctx, door) {
 
     ctx.fill();
 
+
+    ctx.fillStyle =
+        "#457b9d";
+
+    ctx.beginPath();
+
+    ctx.arc(
+        x + width * 0.5,
+        y + height * 0.72,
+        3,
+        0,
+        Math.PI * 2
+    );
+
+    ctx.fill();
+
+
+    ctx.fillStyle =
+        "#e63946";
+
+    ctx.beginPath();
+
+    ctx.arc(
+        x + width * 0.7,
+        y + height * 0.72,
+        3,
+        0,
+        Math.PI * 2
+    );
+
+    ctx.fill();
+
+
+    ctx.restore();
+}
+
+
+function drawKey(
+    ctx,
+    key
+) {
+
+    if (!key) {
+        return;
+    }
+
+
+    ctx.save();
+
+
+    const centerX =
+        key.x + key.width * 0.3;
+
+    const centerY =
+        key.y + key.height * 0.3;
+
+    const radius =
+        Math.min(
+            key.width,
+            key.height
+        ) * 0.25;
+
+
+    ctx.strokeStyle =
+        "#f4d35e";
+
+    ctx.lineWidth =
+        5;
+
+
+    ctx.beginPath();
+
+    ctx.arc(
+        centerX,
+        centerY,
+        radius,
+        0,
+        Math.PI * 2
+    );
+
+    ctx.stroke();
+
+
+    ctx.beginPath();
+
+    ctx.moveTo(
+        centerX + radius,
+        centerY
+    );
+
+    ctx.lineTo(
+        key.x + key.width,
+        key.y + key.height * 0.7
+    );
+
+    ctx.lineTo(
+        key.x + key.width * 0.75,
+        key.y + key.height * 0.7
+    );
+
+    ctx.lineTo(
+        key.x + key.width * 0.65,
+        key.y + key.height
+    );
+
+    ctx.stroke();
+
+
+    ctx.restore();
 }
 
 
@@ -570,6 +670,35 @@ function drawWater(
 
     ctx.fill();
 
+
+    ctx.strokeStyle =
+        "rgba(204, 242, 230, 0.55)";
+
+    ctx.lineWidth =
+        2;
+
+
+    for (
+        let index = -2;
+        index <= 2;
+        index++
+    ) {
+
+        ctx.beginPath();
+
+        ctx.ellipse(
+            x,
+            y + index * height * 0.27,
+            width * 0.65,
+            height * 0.08,
+            0,
+            0,
+            Math.PI * 2
+        );
+
+        ctx.stroke();
+
+    }
 }
 
 
@@ -591,7 +720,58 @@ function drawGroundMist(
         width,
         height * 0.24
     );
+}
 
+
+function drawDoor(
+    ctx,
+    door
+) {
+
+    if (!door) {
+        return;
+    }
+
+
+    ctx.fillStyle =
+        "#382a32";
+
+    ctx.fillRect(
+        door.x,
+        door.y,
+        door.width,
+        door.height
+    );
+
+
+    ctx.strokeStyle =
+        "#e5d994";
+
+    ctx.lineWidth =
+        4;
+
+    ctx.strokeRect(
+        door.x + 2,
+        door.y + 2,
+        door.width - 4,
+        door.height - 2
+    );
+
+
+    ctx.fillStyle =
+        "#e5d994";
+
+    ctx.beginPath();
+
+    ctx.arc(
+        door.x + door.width - 12,
+        door.y + door.height / 2,
+        3,
+        0,
+        Math.PI * 2
+    );
+
+    ctx.fill();
 }
 
 
@@ -637,6 +817,84 @@ function drawPlatform(
         )
     );
 
+
+    if (
+        style === "moss"
+    ) {
+
+        ctx.fillStyle =
+            "#8fbd62";
+
+
+        for (
+            let x = platform.x + 8;
+            x < platform.x + platform.width;
+            x += 20
+        ) {
+
+            ctx.fillRect(
+                x,
+                platform.y - 4,
+                10,
+                4
+            );
+
+        }
+
+    }
+    else if (
+        style === "wood"
+    ) {
+
+        ctx.strokeStyle =
+            "rgba(75, 38, 22, 0.45)";
+
+        ctx.lineWidth =
+            2;
+
+
+        for (
+            let x = platform.x + 12;
+            x < platform.x + platform.width;
+            x += 28
+        ) {
+
+            ctx.beginPath();
+
+            ctx.moveTo(
+                x,
+                platform.y + 8
+            );
+
+            ctx.lineTo(
+                x + 8,
+                platform.y + platform.height - 4
+            );
+
+            ctx.stroke();
+
+        }
+
+    }
+    else if (
+        style === "crystal" ||
+        style === "neon"
+    ) {
+
+        ctx.strokeStyle =
+            highlight;
+
+        ctx.lineWidth =
+            2;
+
+        ctx.strokeRect(
+            platform.x + 2,
+            platform.y + 2,
+            platform.width - 4,
+            platform.height - 4
+        );
+
+    }
 }
 
 
@@ -648,175 +906,38 @@ function platformHighlight(
     if (
         style === "moss"
     ) {
+
         return "#d0e79b";
+
     }
 
     if (
         style === "wood"
     ) {
+
         return "#d69a55";
+
     }
 
     if (
         style === "crystal"
     ) {
+
         return "#c5f5ff";
+
     }
 
     if (
         style === "neon"
     ) {
+
         return "#e9ff75";
+
     }
 
     return color === "#737d81"
         ? "#b8c4c0"
         : "#d9e5df";
-
-}
-
-function drawCrow(ctx, crow) {
-
-    ctx.save();
-
-    const centerX =
-        crow.x + crow.width / 2;
-
-    const centerY =
-        crow.y + crow.height / 2;
-
-
-    ctx.fillStyle =
-        "#111";
-
-    ctx.beginPath();
-
-    ctx.ellipse(
-        centerX,
-        centerY,
-        crow.width * 0.4,
-        crow.height * 0.4,
-        0,
-        0,
-        Math.PI * 2
-    );
-
-    ctx.fill();
-
-
-    ctx.fillStyle =
-        "#222";
-
-    ctx.beginPath();
-
-    ctx.moveTo(
-        centerX + crow.width * 0.25,
-        centerY - crow.height * 0.1
-    );
-
-    ctx.lineTo(
-        centerX + crow.width * 0.55,
-        centerY
-    );
-
-    ctx.lineTo(
-        centerX + crow.width * 0.25,
-        centerY + crow.height * 0.1
-    );
-
-    ctx.closePath();
-
-    ctx.fill();
-
-
-    ctx.fillStyle =
-        "white";
-
-    ctx.beginPath();
-
-    ctx.arc(
-        centerX + crow.width * 0.15,
-        centerY - crow.height * 0.15,
-        3,
-        0,
-        Math.PI * 2
-    );
-
-    ctx.fill();
-
-
-    ctx.restore();
-
-}
-
-
-function drawKey(ctx, key) {
-
-    ctx.save();
-
-
-    const centerX =
-        key.x + key.width / 2;
-
-    const centerY =
-        key.y + key.height / 2;
-
-
-    ctx.strokeStyle =
-        "#f4d35e";
-
-    ctx.fillStyle =
-        "#f4d35e";
-
-    ctx.lineWidth =
-        5;
-
-
-    ctx.beginPath();
-
-    ctx.arc(
-        centerX - key.width * 0.18,
-        centerY - key.height * 0.15,
-        key.width * 0.22,
-        0,
-        Math.PI * 2
-    );
-
-    ctx.stroke();
-
-
-    ctx.beginPath();
-
-    ctx.moveTo(
-        centerX,
-        centerY
-    );
-
-    ctx.lineTo(
-        centerX + key.width * 0.38,
-        centerY + key.height * 0.25
-    );
-
-    ctx.lineTo(
-        centerX + key.width * 0.38,
-        centerY + key.height * 0.4
-    );
-
-    ctx.lineTo(
-        centerX + key.width * 0.2,
-        centerY + key.height * 0.4
-    );
-
-    ctx.lineTo(
-        centerX + key.width * 0.2,
-        centerY + key.height * 0.25
-    );
-
-    ctx.stroke();
-
-
-    ctx.restore();
-
 }
 
 
@@ -827,6 +948,6 @@ export {
     drawPlatform,
     drawDoor,
     drawGem,
-    drawCrow,
+    drawCrown,
     drawKey
 };
