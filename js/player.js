@@ -10,6 +10,7 @@ import {
 import { level } from "./level.js";
 
 
+
 // Player object
 const player = {
 
@@ -29,8 +30,13 @@ const player = {
     velocityY: 0,
     jumpStrength: 750,
 
-    grounded: false
+    grounded: false,
+
+    canDoubleJump: false,
+    doubleJumpUsed: false,
 };
+
+player.canDoubleJump = true;
 
 // Spawn player at the level's spawn point
 function spawnPlayer(level) {
@@ -82,17 +88,38 @@ function updatePlayer(deltaTime) {
     // Jump
     // --------------------------------
 
-    if (
-        (
-            isKeyPressed(" ") ||
-            isKeyPressed("w") ||
-            isKeyPressed("ArrowUp")
-        )
-        && player.grounded
-    ) {
+    const jumpPressed =
+        isKeyPressed(" ") ||
+        isKeyPressed("w") ||
+        isKeyPressed("ArrowUp");
 
-        player.velocityY = -player.jumpStrength;
-        player.grounded = false;
+    if (jumpPressed) {
+
+        // Normaler Sprung vom Boden
+        if (player.grounded) {
+
+            player.velocityY =
+                -player.jumpStrength;
+
+            player.grounded = false;
+
+            player.doubleJumpUsed = false;
+
+        }
+
+        // Doppelsprung
+        else if (
+            player.canDoubleJump &&
+            !player.doubleJumpUsed
+        ) {
+
+            player.velocityY =
+                -player.jumpStrength;
+
+            player.doubleJumpUsed = true;
+
+        }
+
     }
 
     // --------------------------------
