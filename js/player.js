@@ -50,23 +50,17 @@ function updatePlayer(deltaTime) {
     // Horizontal movement inputs
     // --------------------------------
 
-    if (
-    isKeyDown("a") ||
-    isKeyDown("ArrowLeft")
-    ) {
-
-        player.velocityX -=
-            player.acceleration * deltaTime;
+    if ((isKeyDown("a") || isKeyDown("ArrowLeft")) && (!isKeyDown("d") && !isKeyDown("ArrowRight"))) 
+    {
+        player.velocityX -= player.acceleration * deltaTime;
     }
-    if (
-        isKeyDown("d") ||
-        isKeyDown("ArrowRight")
-    ) {
+    if ((isKeyDown("d") || isKeyDown("ArrowRight")) && (!isKeyDown("a") && !isKeyDown("ArrowLeft")))
+    {
 
         player.velocityX +=
             player.acceleration * deltaTime;
     }
-    if ((!isKeyDown("a") && !isKeyDown("ArrowLeft") && !isKeyDown("d") && !isKeyDown("ArrowRight")) || (isKeyDown("a") || isKeyDown("ArrowLeft")) && (isKeyDown("ArrowRight") || isKeyDown("ArrowRight"))) {
+    if ((!isKeyDown("a") && !isKeyDown("ArrowLeft") && !isKeyDown("d") && !isKeyDown("ArrowRight")) || (isKeyDown("a") || isKeyDown("ArrowLeft")) && (isKeyDown("d") || isKeyDown("ArrowRight"))) {
 
         player.velocityX *= player.friction;
     }
