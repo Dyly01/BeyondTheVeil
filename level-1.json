@@ -9,18 +9,25 @@
     "background": "forest",
     "doors": [
         {
-            "x": 300,
-            "y": 300,
+            "x": 1575,
+            "y": 225,
             "width": 60,
             "height": 100,
             "level": "./level-2.json"
         },
         {
-            "x": 1250,
-            "y": 125,
+            "x": 125,
+            "y": 450,
             "width": 60,
             "height": 100,
             "level": "./level-3.json"
+        },
+        {
+            "x": 1775,
+            "y": 775,
+            "width": 60,
+            "height": 100,
+            "level": "./level-4.json"
         }
     ],
     "platforms": [
@@ -43,16 +50,10 @@
             "height": 30
         },
         {
-            "x": 850,
+            "x": 1575,
             "y": 330,
             "width": 150,
             "height": 30
-        },
-        {
-            "x": 500,
-            "y": 275,
-            "width": 250,
-            "height": 175
         },
         {
             "x": 825,
@@ -61,22 +62,42 @@
             "height": 100
         },
         {
-            "x": 1225,
-            "y": 325,
-            "width": 50,
-            "height": 100
-        },
-        {
-            "x": 1100,
-            "y": 225,
-            "width": 300,
-            "height": 50
-        },
-        {
             "x": 225,
-            "y": 400,
+            "y": 225,
             "width": 200,
             "height": 75
+        },
+        {
+            "x": 25,
+            "y": 850,
+            "width": 725,
+            "height": 225,
+            "style": "stone",
+            "color": "#737d81"
+        },
+        {
+            "x": 1550,
+            "y": 875,
+            "width": 325,
+            "height": 200,
+            "style": "stone",
+            "color": "#737d81"
+        },
+        {
+            "x": 1075,
+            "y": 400,
+            "width": 250,
+            "height": 125,
+            "style": "stone",
+            "color": "#737d81"
+        },
+        {
+            "x": 700,
+            "y": 275,
+            "width": 250,
+            "height": 75,
+            "style": "stone",
+            "color": "#737d81"
         }
     ]
 }
