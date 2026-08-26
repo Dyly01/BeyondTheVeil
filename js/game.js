@@ -611,9 +611,14 @@ function draw() {
             }
 
 
+            const locked =
+                door.requiresKey &&
+                !gameState.keyCollected;
+
             drawDoor(
                 ctx,
-                door
+                door,
+                locked
             );
 
         }

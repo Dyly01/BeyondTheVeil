@@ -715,18 +715,13 @@ function drawGroundMist(
 }
 
 
-function drawDoor(
-    ctx,
-    door
-) {
+function drawDoor(ctx, door, locked = false) {
 
     if (!door) {
         return;
     }
 
-
-    ctx.fillStyle =
-        "#382a32";
+    ctx.fillStyle = "#382a32";
 
     ctx.fillRect(
         door.x,
@@ -735,12 +730,12 @@ function drawDoor(
         door.height
     );
 
-
     ctx.strokeStyle =
-        "#e5d994";
+        locked
+            ? "#777777"
+            : "#e5d994";
 
-    ctx.lineWidth =
-        4;
+    ctx.lineWidth = 4;
 
     ctx.strokeRect(
         door.x + 2,
@@ -749,21 +744,101 @@ function drawDoor(
         door.height - 2
     );
 
+    if (locked) {
 
-    ctx.fillStyle =
-        "#e5d994";
+        drawLock(
+            ctx,
+            door
+        );
+
+    }
+    else {
+
+        ctx.fillStyle = "#e5d994";
+
+        ctx.beginPath();
+
+        ctx.arc(
+            door.x + door.width - 12,
+            door.y + door.height / 2,
+            3,
+            0,
+            Math.PI * 2
+        );
+
+        ctx.fill();
+
+    }
+}
+
+function drawLock(ctx, door) {
+
+    const centerX =
+        door.x +
+        door.width / 2;
+
+    const centerY =
+        door.y -
+        30;
+
+    const lockWidth = 26;
+    const lockHeight = 22;
+
+    ctx.save();
+
+    // Schlosskörper
+
+    ctx.fillStyle = "#777777";
+
+    ctx.fillRect(
+        centerX - lockWidth / 2,
+        centerY,
+        lockWidth,
+        lockHeight
+    );
+
+    // Bügel
+
+    ctx.strokeStyle = "#777777";
+
+    ctx.lineWidth = 6;
 
     ctx.beginPath();
 
     ctx.arc(
-        door.x + door.width - 12,
-        door.y + door.height / 2,
+        centerX,
+        centerY,
+        10,
+        Math.PI,
+        0
+    );
+
+    ctx.stroke();
+
+    // kleines Schlüsselloch
+
+    ctx.fillStyle = "#252525";
+
+    ctx.beginPath();
+
+    ctx.arc(
+        centerX,
+        centerY + 9,
         3,
         0,
         Math.PI * 2
     );
 
     ctx.fill();
+
+    ctx.fillRect(
+        centerX - 1.5,
+        centerY + 9,
+        3,
+        7
+    );
+
+    ctx.restore();
 }
 
 function drawThrone(ctx, throne) {
