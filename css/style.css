@@ -413,3 +413,33 @@ canvas {
     margin: 20px 0;
 
 }
+
+.volumeSetting {
+
+    width: 100%;
+
+    margin-top: 20px;
+
+    color: white;
+
+}
+
+
+.volumeSetting label {
+
+    display: block;
+
+    margin-bottom: 8px;
+
+    font-size: 18px;
+
+}
+
+
+.volumeSetting input[type="range"] {
+
+    width: 100%;
+
+    accent-color: white;
+
+}

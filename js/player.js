@@ -13,6 +13,10 @@ import {
     level
 } from "./level.js";
 
+import {
+    playJumpSound
+} from "./audio.js";
+
 const sprites = {
     idle: new Image(),
     run: new Image(),
@@ -225,6 +229,8 @@ function updatePlayer(
         player.doubleJumpUsed =
             false;
 
+        playJumpSound();
+
     }
 
     else if (
@@ -243,6 +249,7 @@ function updatePlayer(
         player.animationFrame = 0;
         player.animationTimer = 0;
 
+        playJumpSound();
     }
 
 

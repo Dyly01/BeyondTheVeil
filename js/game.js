@@ -4,6 +4,11 @@ import {
 } from "./pause.js";
 
 import {
+    startMusic,
+    playCollectSound
+} from "./audio.js";
+
+import {
     shouldShowInfoScreens
 } from "./settings.js";
 
@@ -210,6 +215,8 @@ function checkCollectibles() {
         player.canDoubleJump =
             true;
 
+        playCollectSound();
+
         showDoubleJumpInfo();
 
         console.log(
@@ -234,6 +241,8 @@ function checkCollectibles() {
         gameState.crownCollected =
             true;
 
+        playCollectSound();
+
 
         console.log(
             "Crown collected!"
@@ -256,6 +265,8 @@ function checkCollectibles() {
 
         gameState.keyCollected =
             true;
+
+        playCollectSound();
 
 
         console.log(
@@ -680,6 +691,8 @@ function closeIntroScreen() {
 
     introScreen.style.display =
         "none";
+
+    startMusic();
 
 }
 

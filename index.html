@@ -2,12 +2,20 @@
 <html lang="en">
 
 <head>
+
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
     <title>My Platformer</title>
 
-    <link rel="stylesheet" href="./css/style.css">
+    <link
+        rel="stylesheet"
+        href="./css/style.css"
+    >
+
 </head>
 
 <body>
@@ -16,7 +24,7 @@
 
         <div id="introContent">
 
-            <h1>BEYOND THE VEIL</h1>    
+            <h1>BEYOND THE VEIL</h1>
 
             <h2>How to Play</h2>
 
@@ -60,7 +68,8 @@
 
     </div>
 
-        <div id="doubleJumpInfo">
+
+    <div id="doubleJumpInfo">
 
         <div id="doubleJumpInfoContent">
 
@@ -83,11 +92,18 @@
 
     </div>
 
+
     <canvas id="gameCanvas"></canvas>
+
 
     <div id="livesDisplay"></div>
 
-    <button id="pauseButton" aria-label="Pause menu"></button>
+
+    <button
+        id="pauseButton"
+        aria-label="Pause menu"
+    ></button>
+
 
     <div id="pauseMenu">
 
@@ -107,16 +123,17 @@
                 Settings
             </button>
 
-            
         </div>
 
     </div>
+
 
     <div id="settingsMenu">
 
         <div id="settingsMenuContent">
 
             <h1>Settings</h1>
+
 
             <label class="settingToggle">
 
@@ -132,6 +149,41 @@
 
             </label>
 
+
+            <div class="volumeSetting">
+
+                <label for="musicVolume">
+                    Music Volume
+                </label>
+
+                <input
+                    type="range"
+                    id="musicVolume"
+                    min="0"
+                    max="100"
+                    value="30"
+                >
+
+            </div>
+
+
+            <div class="volumeSetting">
+
+                <label for="soundVolume">
+                    Sound Effects
+                </label>
+
+                <input
+                    type="range"
+                    id="soundVolume"
+                    min="0"
+                    max="100"
+                    value="50"
+                >
+
+            </div>
+
+
             <button id="backSettingsButton">
                 Back
             </button>
@@ -141,8 +193,15 @@
     </div>
 
 
-    <script type="module" src="js/game.js"></script>
-    <script type="module" src="./js/settings.js"></script>
+    <script
+        type="module"
+        src="./js/settings.js"
+    ></script>
+
+    <script
+        type="module"
+        src="./js/game.js"
+    ></script>
 
 </body>
 
