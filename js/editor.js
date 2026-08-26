@@ -4,13 +4,11 @@ import {
     drawBackground,
     drawPlatform,
     drawDoor,
-    drawThrone
+    drawThrone,
+    drawGem,
+    drawCrown,
+    drawKey
 } from "./graphics.js";
-
-
-// ============================================================
-// CANVAS SETUP
-// ============================================================
 
 const canvas =
     document.getElementById("editorCanvas");
@@ -35,13 +33,8 @@ window.addEventListener(
     resizeCanvas
 );
 
-
 resizeCanvas();
 
-
-// ============================================================
-// EDITOR WORLD
-// ============================================================
 
 const editorWorld = {
 
@@ -51,10 +44,6 @@ const editorWorld = {
 
 };
 
-
-// ============================================================
-// CAMERA
-// ============================================================
 
 const camera = {
 
@@ -69,16 +58,8 @@ const camera = {
 };
 
 
-// ============================================================
-// GRID
-// ============================================================
-
 const GRID_SIZE = 25;
 
-
-// ============================================================
-// LEVEL DATA
-// ============================================================
 
 let level = null;
 
@@ -92,17 +73,12 @@ let spawn = {
 
 };
 
-
-// Multiple doors are supported.
+let spawns = [];
 
 let doors = [];
 
 let thrones = [];
 
-
-// ============================================================
-// HISTORY
-// ============================================================
 
 const history = [];
 
@@ -117,6 +93,8 @@ function createEditorSnapshot() {
             platforms,
 
             spawn,
+
+            spawns,
 
             doors,
 
@@ -136,11 +114,9 @@ function saveHistoryState() {
         historyIndex + 1
     );
 
-
     history.push(
         createEditorSnapshot()
     );
-
 
     historyIndex =
         history.length - 1;
@@ -166,12 +142,21 @@ function restoreHistoryState(snapshot) {
         );
 
 
+    spawns =
+        JSON.parse(
+            JSON.stringify(
+                snapshot.spawns || []
+            )
+        );
+
+
     doors =
         JSON.parse(
             JSON.stringify(
                 snapshot.doors || []
             )
         );
+
 
     thrones =
         JSON.parse(
@@ -211,11 +196,18 @@ function restoreHistoryState(snapshot) {
     originalDoor =
         null;
 
+    originalSpawnPoint =
+        null;
+
+    originalThrone =
+        null;
+
 
     updatePropertiesPanel();
 
-
     updateDoorControls();
+
+    updateSpawnControls();
 
 
     canvas.style.cursor =
@@ -237,7 +229,6 @@ function undo() {
 
     historyIndex--;
 
-
     restoreHistoryState(
         history[historyIndex]
     );
@@ -255,8 +246,8 @@ function redo() {
 
     }
 
-    historyIndex++;
 
+    historyIndex++;
 
     restoreHistoryState(
         history[historyIndex]
@@ -264,10 +255,6 @@ function redo() {
 
 }
 
-
-// ============================================================
-// EDITOR KEYBOARD
-// ============================================================
 
 const editorKeys = {};
 
@@ -296,10 +283,6 @@ document.addEventListener(
         }
 
 
-        // ----------------------------------------------------
-        // DELETE
-        // ----------------------------------------------------
-
         if (
             event.key === "Delete"
         ) {
@@ -323,6 +306,16 @@ document.addEventListener(
 
             }
 
+
+            if (selectedSpawnPoint) {
+
+                deleteSelectedSpawnPoint();
+
+                return;
+
+            }
+
+
             if (selectedThrone) {
 
                 deleteSelectedThrone();
@@ -333,10 +326,6 @@ document.addEventListener(
 
         }
 
-
-        // ----------------------------------------------------
-        // UNDO
-        // ----------------------------------------------------
 
         if (
             event.ctrlKey &&
@@ -353,10 +342,6 @@ document.addEventListener(
         }
 
 
-        // ----------------------------------------------------
-        // REDO
-        // ----------------------------------------------------
-
         if (
             event.ctrlKey &&
             event.key.toLowerCase() === "y"
@@ -370,10 +355,6 @@ document.addEventListener(
 
         }
 
-
-        // ----------------------------------------------------
-        // SELECT ALL
-        // ----------------------------------------------------
 
         if (
             event.ctrlKey &&
@@ -413,10 +394,6 @@ document.addEventListener(
     }
 );
 
-
-// ============================================================
-// CAMERA MOVEMENT
-// ============================================================
 
 function updateCamera(deltaTime) {
 
@@ -519,13 +496,11 @@ function updateCamera(deltaTime) {
 }
 
 
-// ============================================================
-// PLATFORM / DOOR SELECTION
-// ============================================================
-
 let selectedPlatforms = [];
 
 let selectedDoor = null;
+
+let selectedSpawnPoint = null;
 
 let selectedThrone = null;
 
@@ -535,6 +510,8 @@ function clearSelection() {
     selectedPlatforms = [];
 
     selectedDoor = null;
+
+    selectedSpawnPoint = null;
 
     selectedThrone = null;
 
@@ -549,9 +526,13 @@ function selectPlatform(platform) {
 
     selectedDoor = null;
 
+    selectedSpawnPoint = null;
+
     selectedThrone = null;
 
     updateDoorControls();
+
+    updateSpawnControls();
 
 }
 
@@ -585,9 +566,13 @@ function togglePlatformSelection(platform) {
 
     selectedDoor = null;
 
+    selectedSpawnPoint = null;
+
     selectedThrone = null;
 
     updateDoorControls();
+
+    updateSpawnControls();
 
 }
 
@@ -599,9 +584,13 @@ function selectAllPlatforms() {
 
     selectedDoor = null;
 
+    selectedSpawnPoint = null;
+
     selectedThrone = null;
 
     updateDoorControls();
+
+    updateSpawnControls();
 
 }
 
@@ -614,10 +603,6 @@ function isPlatformSelected(platform) {
 
 }
 
-
-// ============================================================
-// DOOR SELECTION
-// ============================================================
 
 function selectDoor(door) {
 
@@ -633,22 +618,66 @@ function selectDoor(door) {
 
     selectedPlatforms = [];
 
+    selectedSpawnPoint = null;
+
     selectedThrone = null;
 
 
     updateDoorControls();
 
+    updateSpawnControls();
+
 }
 
-function selectThrone(throne) {
-    if (!throne) {
+
+function selectSpawnPoint(spawnPoint) {
+
+    if (!spawnPoint) {
+
         return;
+
     }
 
-    selectedThrone = throne;
+
+    selectedSpawnPoint =
+        spawnPoint;
+
     selectedPlatforms = [];
+
     selectedDoor = null;
+
+    selectedThrone = null;
+
+
     updateDoorControls();
+
+    updateSpawnControls();
+
+}
+
+
+function selectThrone(throne) {
+
+    if (!throne) {
+
+        return;
+
+    }
+
+
+    selectedThrone =
+        throne;
+
+    selectedPlatforms = [];
+
+    selectedDoor = null;
+
+    selectedSpawnPoint = null;
+
+    updateDoorControls();
+
+    updateSpawnControls();
+
 }
 
 
@@ -668,30 +697,24 @@ function deleteSelectedDoor() {
 
 
     if (
-        index === -1
+        index !== -1
     ) {
 
-        selectedDoor =
-            null;
+        doors.splice(
+            index,
+            1
+        );
 
-        return;
+        saveHistoryState();
 
     }
-
-
-    doors.splice(
-        index,
-        1
-    );
 
 
     selectedDoor =
         null;
 
-
     originalDoor =
         null;
-
 
     isDragging =
         false;
@@ -699,31 +722,93 @@ function deleteSelectedDoor() {
 
     updateDoorControls();
 
+}
 
-    saveHistoryState();
+
+function deleteSelectedSpawnPoint() {
+
+    if (!selectedSpawnPoint) {
+
+        return;
+
+    }
+
+
+    const index =
+        spawns.indexOf(
+            selectedSpawnPoint
+        );
+
+
+    if (
+        index !== -1
+    ) {
+
+        spawns.splice(
+            index,
+            1
+        );
+
+        saveHistoryState();
+
+    }
+
+
+    selectedSpawnPoint =
+        null;
+
+    originalSpawnPoint =
+        null;
+
+    isDragging =
+        false;
+
+
+    updateSpawnControls();
 
 }
+
 
 function deleteSelectedThrone() {
+
     if (!selectedThrone) {
+
         return;
+
     }
 
-    const index = thrones.indexOf(selectedThrone);
 
-    if (index !== -1) {
-        thrones.splice(index, 1);
+    const index =
+        thrones.indexOf(
+            selectedThrone
+        );
+
+
+    if (
+        index !== -1
+    ) {
+
+        thrones.splice(
+            index,
+            1
+        );
+
         saveHistoryState();
+
     }
 
-    selectedThrone = null;
-    isDragging = false;
+
+    selectedThrone =
+        null;
+
+    originalThrone =
+        null;
+
+    isDragging =
+        false;
+
 }
 
-
-// ============================================================
-// DRAG / RESIZE STATE
-// ============================================================
 
 let isDragging =
     false;
@@ -732,33 +817,27 @@ let isDragging =
 let dragStart =
     null;
 
-
 let dragCurrent =
     null;
-
 
 let currentTool =
     "platform";
 
-
 let resizingHandle =
     null;
-
 
 let originalPlatforms =
     [];
 
-
 let originalDoor =
+    null;
+
+let originalSpawnPoint =
     null;
 
 let originalThrone =
     null;
 
-
-// ============================================================
-// BASIC TOOLS
-// ============================================================
 
 document
     .getElementById("platformTool")
@@ -769,8 +848,7 @@ document
             currentTool =
                 "platform";
 
-            selectedDoor =
-                null;
+            clearSelection();
 
             canvas.style.cursor =
                 "default";
@@ -778,6 +856,8 @@ document
             updatePropertiesPanel();
 
             updateDoorControls();
+
+            updateSpawnControls();
 
         }
     );
@@ -798,6 +878,8 @@ document
 
             updateDoorControls();
 
+            updateSpawnControls();
+
         }
     );
 
@@ -813,9 +895,14 @@ document
 
             clearSelection();
 
+            canvas.style.cursor =
+                "crosshair";
+
             updatePropertiesPanel();
 
             updateDoorControls();
+
+            updateSpawnControls();
 
         }
     );
@@ -829,12 +916,10 @@ document
     );
 
 
-// ============================================================
-// GRAPHICS CONTROLS
-// ============================================================
-
 const toolbar =
-    document.getElementById("toolbar");
+    document.getElementById(
+        "toolbar"
+    );
 
 
 const backgroundSelect =
@@ -859,7 +944,9 @@ if (backgroundSelect) {
 
     for (
         const [value, label]
-        of Object.entries(BACKGROUNDS)
+        of Object.entries(
+            BACKGROUNDS
+        )
     ) {
 
         backgroundSelect.add(
@@ -878,7 +965,9 @@ if (platformStyleSelect) {
 
     for (
         const [value, label]
-        of Object.entries(PLATFORM_STYLES)
+        of Object.entries(
+            PLATFORM_STYLES
+        )
     ) {
 
         platformStyleSelect.add(
@@ -962,12 +1051,11 @@ if (platformColorInput) {
         applyPlatformDesign
     );
 
+
 }
 
 
-// ============================================================
-// DOOR TOOL / CONTROLS
-// ============================================================
+// Door controls
 
 let doorTool =
     document.getElementById(
@@ -1004,43 +1092,118 @@ doorTool.addEventListener(
 
         clearSelection();
 
+        canvas.style.cursor =
+            "crosshair";
+
         updatePropertiesPanel();
 
         updateDoorControls();
 
-        canvas.style.cursor =
-            "crosshair";
+        updateSpawnControls();
 
     }
 );
+
 
 let throneTool =
     document.getElementById(
         "throneTool"
     );
 
+
 if (!throneTool) {
-    throneTool = document.createElement("button");
-    throneTool.id = "throneTool";
-    throneTool.textContent = "Throne";
-    toolbar.appendChild(throneTool);
+
+    throneTool =
+        document.createElement(
+            "button"
+        );
+
+    throneTool.id =
+        "throneTool";
+
+    throneTool.textContent =
+        "Throne";
+
+    toolbar.appendChild(
+        throneTool
+    );
+
 }
+
 
 throneTool.addEventListener(
     "click",
     () => {
-        currentTool = "throne";
+
+        currentTool =
+            "throne";
+
         clearSelection();
+
+        canvas.style.cursor =
+            "crosshair";
+
         updatePropertiesPanel();
+
         updateDoorControls();
-        canvas.style.cursor = "crosshair";
+
+        updateSpawnControls();
+
     }
 );
 
 
-// ============================================================
-// DOOR LEVEL SELECTOR
-// ============================================================
+// Checkpoint tool
+
+let checkpointTool =
+    document.getElementById(
+        "checkpointTool"
+    );
+
+
+if (!checkpointTool) {
+
+    checkpointTool =
+        document.createElement(
+            "button"
+        );
+
+    checkpointTool.id =
+        "checkpointTool";
+
+    checkpointTool.textContent =
+        "Checkpoint";
+
+    toolbar.appendChild(
+        checkpointTool
+    );
+
+}
+
+
+checkpointTool.addEventListener(
+    "click",
+    () => {
+
+        currentTool =
+            "checkpoint";
+
+        clearSelection();
+
+        canvas.style.cursor =
+            "crosshair";
+
+        updatePropertiesPanel();
+
+        updateDoorControls();
+
+        updateSpawnControls();
+
+    }
+);
+
+
+// Door destination controls
 
 let doorLevelContainer =
     document.getElementById(
@@ -1090,36 +1253,130 @@ if (!doorLevelSelect) {
 
 }
 
+
 let doorDestinationContainer =
     document.getElementById(
         "doorDestinationContainer"
     );
 
+
 if (!doorDestinationContainer) {
-    doorDestinationContainer = document.createElement("label");
-    doorDestinationContainer.id = "doorDestinationContainer";
-    doorDestinationContainer.innerHTML = "Inside X/Y ";
 
-    const destinationX = document.createElement("input");
-    destinationX.id = "doorDestinationX";
-    destinationX.type = "number";
-    destinationX.placeholder = "X";
+    doorDestinationContainer =
+        document.createElement(
+            "label"
+        );
 
-    const destinationY = document.createElement("input");
-    destinationY.id = "doorDestinationY";
-    destinationY.type = "number";
-    destinationY.placeholder = "Y";
+    doorDestinationContainer.id =
+        "doorDestinationContainer";
+
+    doorDestinationContainer.innerHTML =
+        "Inside X/Y ";
+
+    const destinationX =
+        document.createElement(
+            "input"
+        );
+
+    destinationX.id =
+        "doorDestinationX";
+
+    destinationX.type =
+        "number";
+
+    destinationX.placeholder =
+        "X";
+
+
+    const destinationY =
+        document.createElement(
+            "input"
+        );
+
+    destinationY.id =
+        "doorDestinationY";
+
+    destinationY.type =
+        "number";
+
+    destinationY.placeholder =
+        "Y";
+
 
     doorDestinationContainer.append(
         destinationX,
         destinationY
     );
 
-    toolbar.appendChild(doorDestinationContainer);
+
+    toolbar.appendChild(
+        doorDestinationContainer
+    );
+
 }
 
-const doorDestinationX = document.getElementById("doorDestinationX");
-const doorDestinationY = document.getElementById("doorDestinationY");
+
+const doorDestinationX =
+    document.getElementById(
+        "doorDestinationX"
+    );
+
+
+const doorDestinationY =
+    document.getElementById(
+        "doorDestinationY"
+    );
+
+
+// Checkpoint source controls
+
+let spawnSourceContainer =
+    document.getElementById(
+        "spawnSourceContainer"
+    );
+
+
+if (!spawnSourceContainer) {
+
+    spawnSourceContainer =
+        document.createElement(
+            "label"
+        );
+
+    spawnSourceContainer.id =
+        "spawnSourceContainer";
+
+    spawnSourceContainer.innerHTML =
+        "Comes From ";
+
+    toolbar.appendChild(
+        spawnSourceContainer
+    );
+
+}
+
+
+let spawnSourceSelect =
+    document.getElementById(
+        "spawnSourceSelect"
+    );
+
+
+if (!spawnSourceSelect) {
+
+    spawnSourceSelect =
+        document.createElement(
+            "select"
+        );
+
+    spawnSourceSelect.id =
+        "spawnSourceSelect";
+
+    spawnSourceContainer.appendChild(
+        spawnSourceSelect
+    );
+
+}
 
 
 const defaultLevelFiles = [
@@ -1138,13 +1395,20 @@ const defaultLevelFiles = [
 ];
 
 
-function populateDoorLevelSelector() {
+function populateLevelSelector(
+    select,
+    currentValue
+) {
 
-    const currentValue =
-        doorLevelSelect.value;
+    if (!select) {
+
+        return;
+
+    }
 
 
-    doorLevelSelect.innerHTML = "";
+    select.innerHTML =
+        "";
 
 
     for (
@@ -1154,24 +1418,30 @@ function populateDoorLevelSelector() {
 
         const option =
             new Option(
-                file.replace(
-                    "./",
-                    ""
-                ),
+                file
+                    .replace(
+                        "./",
+                        ""
+                    ),
                 file
             );
 
 
-        doorLevelSelect.appendChild(
+        select.appendChild(
             option
         );
 
     }
 
 
-    if (currentValue) {
+    if (
+        currentValue &&
+        defaultLevelFiles.includes(
+            currentValue
+        )
+    ) {
 
-        doorLevelSelect.value =
+        select.value =
             currentValue;
 
     }
@@ -1179,18 +1449,27 @@ function populateDoorLevelSelector() {
 }
 
 
-populateDoorLevelSelector();
+populateLevelSelector(
+    doorLevelSelect,
+    "./level-2.json"
+);
 
 
-// ============================================================
-// DOOR TARGET CHANGE
-// ============================================================
+populateLevelSelector(
+    spawnSourceSelect,
+    "./level-1.json"
+);
+
+
+// Door target change
 
 doorLevelSelect.addEventListener(
     "change",
     () => {
 
-        if (!selectedDoor) {
+        if (
+            !selectedDoor
+        ) {
 
             return;
 
@@ -1207,10 +1486,6 @@ doorLevelSelect.addEventListener(
 );
 
 
-// ============================================================
-// UPDATE DOOR CONTROLS
-// ============================================================
-
 function updateDoorControls() {
 
     if (!doorLevelContainer) {
@@ -1220,61 +1495,169 @@ function updateDoorControls() {
     }
 
 
-    doorLevelContainer.style.display =
+    const visible =
         selectedDoor ||
-        currentTool === "door"
+        currentTool === "door";
+
+
+    doorLevelContainer.style.display =
+        visible
             ? "flex"
             : "none";
 
 
-    if (selectedDoor) {
+    if (
+        doorDestinationContainer
+    ) {
+
+        doorDestinationContainer.style.display =
+            visible
+                ? "flex"
+                : "none";
+
+    }
+
+
+    if (
+        selectedDoor
+    ) {
 
         doorLevelSelect.value =
             selectedDoor.level ||
             "./level-2.json";
 
+
         doorDestinationX.value =
-            selectedDoor.destination?.x ?? "";
+            selectedDoor.destination?.x ??
+            "";
 
         doorDestinationY.value =
-            selectedDoor.destination?.y ?? "";
+            selectedDoor.destination?.y ??
+            "";
 
     }
 
-    doorDestinationContainer.style.display =
-        selectedDoor || currentTool === "door"
+}
+
+
+function updateSpawnControls() {
+
+    if (!spawnSourceContainer) {
+
+        return;
+
+    }
+
+
+    const visible =
+        selectedSpawnPoint ||
+        currentTool === "checkpoint";
+
+
+    spawnSourceContainer.style.display =
+        visible
             ? "flex"
             : "none";
 
+
+    if (
+        selectedSpawnPoint
+    ) {
+
+        spawnSourceSelect.value =
+            selectedSpawnPoint.from ||
+            "./level-1.json";
+
+    }
+
 }
+
 
 function updateDoorDestination() {
+
     if (!selectedDoor) {
+
         return;
+
     }
 
-    const x = Number(doorDestinationX.value);
-    const y = Number(doorDestinationY.value);
 
-    if (Number.isFinite(x) && Number.isFinite(y)) {
+    const x =
+        Number(
+            doorDestinationX.value
+        );
+
+
+    const y =
+        Number(
+            doorDestinationY.value
+        );
+
+
+    if (
+        Number.isFinite(x) &&
+        Number.isFinite(y)
+    ) {
+
         selectedDoor.destination = {
-            x: snapToGrid(x),
-            y: snapToGrid(y)
+
+            x:
+                snapToGrid(
+                    x
+                ),
+
+            y:
+                snapToGrid(
+                    y
+                )
+
         };
-    } else {
-        delete selectedDoor.destination;
+
     }
+    else {
+
+        delete selectedDoor.destination;
+
+    }
+
 
     saveHistoryState();
+
 }
 
-doorDestinationX.addEventListener("change", updateDoorDestination);
-doorDestinationY.addEventListener("change", updateDoorDestination);
+
+doorDestinationX.addEventListener(
+    "change",
+    updateDoorDestination
+);
 
 
-// ============================================================
-// PLATFORM LOOKUP
-// ============================================================
+doorDestinationY.addEventListener(
+    "change",
+    updateDoorDestination
+);
+
+
+spawnSourceSelect.addEventListener(
+    "change",
+    () => {
+
+        if (!selectedSpawnPoint) {
+
+            return;
+
+        }
+
+
+        selectedSpawnPoint.from =
+            spawnSourceSelect.value;
+
+
+        saveHistoryState();
+
+    }
+);
+
 
 function getPlatformAtPosition(
     x,
@@ -1293,9 +1676,13 @@ function getPlatformAtPosition(
 
         if (
             x >= platform.x &&
-            x <= platform.x + platform.width &&
+            x <=
+                platform.x +
+                platform.width &&
             y >= platform.y &&
-            y <= platform.y + platform.height
+            y <=
+                platform.y +
+                platform.height
         ) {
 
             return platform;
@@ -1309,10 +1696,6 @@ function getPlatformAtPosition(
 
 }
 
-
-// ============================================================
-// DOOR LOOKUP
-// ============================================================
 
 function getDoorAtPosition(
     x,
@@ -1331,9 +1714,13 @@ function getDoorAtPosition(
 
         if (
             x >= door.x &&
-            x <= door.x + door.width &&
+            x <=
+                door.x +
+                door.width &&
             y >= door.y &&
-            y <= door.y + door.height
+            y <=
+                door.y +
+                door.height
         ) {
 
             return door;
@@ -1347,27 +1734,92 @@ function getDoorAtPosition(
 
 }
 
-function getThroneAtPosition(x, y) {
-    for (let i = thrones.length - 1; i >= 0; i--) {
-        const throne = thrones[i];
+
+function getSpawnPointAtPosition(
+    x,
+    y
+) {
+
+    for (
+        let i = spawns.length - 1;
+        i >= 0;
+        i--
+    ) {
+
+        const spawnPoint =
+            spawns[i];
+
+
+        const width =
+            spawnPoint.width ||
+            40;
+
+
+        const height =
+            spawnPoint.height ||
+            60;
+
 
         if (
-            x >= throne.x &&
-            x <= throne.x + throne.width &&
-            y >= throne.y &&
-            y <= throne.y + throne.height
+            x >= spawnPoint.x &&
+            x <=
+                spawnPoint.x +
+                width &&
+            y >= spawnPoint.y &&
+            y <=
+                spawnPoint.y +
+                height
         ) {
-            return throne;
+
+            return spawnPoint;
+
         }
+
     }
 
+
     return null;
+
 }
 
 
-// ============================================================
-// SCREEN → WORLD
-// ============================================================
+function getThroneAtPosition(
+    x,
+    y
+) {
+
+    for (
+        let i = thrones.length - 1;
+        i >= 0;
+        i--
+    ) {
+
+        const throne =
+            thrones[i];
+
+
+        if (
+            x >= throne.x &&
+            x <=
+                throne.x +
+                throne.width &&
+            y >= throne.y &&
+            y <=
+                throne.y +
+                throne.height
+        ) {
+
+            return throne;
+
+        }
+
+    }
+
+
+    return null;
+
+}
+
 
 function screenToWorld(
     mouseX,
@@ -1391,11 +1843,9 @@ function screenToWorld(
 }
 
 
-// ============================================================
-// SNAP TO GRID
-// ============================================================
-
-function snapToGrid(value) {
+function snapToGrid(
+    value
+) {
 
     return Math.round(
         value / GRID_SIZE
@@ -1403,10 +1853,6 @@ function snapToGrid(value) {
 
 }
 
-
-// ============================================================
-// RESIZE HANDLES
-// ============================================================
 
 function getResizeHandle(
     x,
@@ -1419,13 +1865,15 @@ function getResizeHandle(
 
 
     const screenX =
-        (platform.x - camera.x) *
-        camera.zoom;
+        (platform.x -
+            camera.x) *
+            camera.zoom;
 
 
     const screenY =
-        (platform.y - camera.y) *
-        camera.zoom;
+        (platform.y -
+            camera.y) *
+            camera.zoom;
 
 
     const screenWidth =
@@ -1487,16 +1935,22 @@ function getResizeHandle(
 
     for (
         const [name, handle]
-        of Object.entries(handles)
+        of Object.entries(
+            handles
+        )
     ) {
 
         if (
             Math.abs(
-                x - handle.x
-            ) <= handleSize &&
+                x -
+                handle.x
+            ) <=
+                handleSize &&
             Math.abs(
-                y - handle.y
-            ) <= handleSize
+                y -
+                handle.y
+            ) <=
+                handleSize
         ) {
 
             return name;
@@ -1510,10 +1964,6 @@ function getResizeHandle(
 
 }
 
-
-// ============================================================
-// DELETE SELECTED PLATFORMS
-// ============================================================
 
 function deleteSelectedPlatforms() {
 
@@ -1541,20 +1991,21 @@ function deleteSelectedPlatforms() {
 
     clearSelection();
 
-
     resizingHandle =
         null;
 
-
     originalPlatforms =
         [];
-
 
     isDragging =
         false;
 
 
     updatePropertiesPanel();
+
+    updateDoorControls();
+
+    updateSpawnControls();
 
 
     canvas.style.cursor =
@@ -1565,10 +2016,6 @@ function deleteSelectedPlatforms() {
 
 }
 
-
-// ============================================================
-// CURSOR
-// ============================================================
 
 function updateCursor(
     mouseX,
@@ -1597,6 +2044,23 @@ function updateCursor(
 
     }
 
+
+    if (
+        selectedSpawnPoint &&
+        getSpawnPointAtPosition(
+            worldPosition.x,
+            worldPosition.y
+        ) === selectedSpawnPoint
+    ) {
+
+        canvas.style.cursor =
+            "grab";
+
+        return;
+
+    }
+
+
     if (
         selectedThrone &&
         getThroneAtPosition(
@@ -1604,20 +2068,12 @@ function updateCursor(
             worldPosition.y
         ) === selectedThrone
     ) {
-        canvas.style.cursor = "grab";
+
+        canvas.style.cursor =
+            "grab";
+
         return;
-    }
 
-    if (currentTool === "throne") {
-        const hoveredThrone = getThroneAtPosition(
-            worldPosition.x,
-            worldPosition.y
-        );
-
-        if (hoveredThrone) {
-            canvas.style.cursor = "grab";
-            return;
-        }
     }
 
 
@@ -1633,6 +2089,52 @@ function updateCursor(
 
 
         if (hoveredDoor) {
+
+            canvas.style.cursor =
+                "grab";
+
+            return;
+
+        }
+
+    }
+
+
+    if (
+        currentTool === "checkpoint"
+    ) {
+
+        const hoveredSpawn =
+            getSpawnPointAtPosition(
+                worldPosition.x,
+                worldPosition.y
+            );
+
+
+        if (hoveredSpawn) {
+
+            canvas.style.cursor =
+                "grab";
+
+            return;
+
+        }
+
+    }
+
+
+    if (
+        currentTool === "throne"
+    ) {
+
+        const hoveredThrone =
+            getThroneAtPosition(
+                worldPosition.x,
+                worldPosition.y
+            );
+
+
+        if (hoveredThrone) {
 
             canvas.style.cursor =
                 "grab";
@@ -1756,10 +2258,6 @@ function updateCursor(
 }
 
 
-// ============================================================
-// MOUSE DOWN
-// ============================================================
-
 canvas.addEventListener(
     "mousedown",
     (event) => {
@@ -1771,10 +2269,6 @@ canvas.addEventListener(
             );
 
 
-        // ====================================================
-        // SPAWN TOOL
-        // ====================================================
-
         if (
             currentTool === "spawn"
         ) {
@@ -1783,7 +2277,6 @@ canvas.addEventListener(
                 snapToGrid(
                     worldPosition.x
                 );
-
 
             spawn.y =
                 snapToGrid(
@@ -1798,9 +2291,101 @@ canvas.addEventListener(
         }
 
 
-        // ====================================================
-        // DOOR TOOL
-        // ====================================================
+        if (
+            currentTool === "checkpoint"
+        ) {
+
+            const existingSpawn =
+                getSpawnPointAtPosition(
+                    worldPosition.x,
+                    worldPosition.y
+                );
+
+
+            if (existingSpawn) {
+
+                selectSpawnPoint(
+                    existingSpawn
+                );
+
+
+                dragStart = {
+
+                    x:
+                        worldPosition.x,
+
+                    y:
+                        worldPosition.y
+
+                };
+
+
+                originalSpawnPoint = {
+
+                    x:
+                        existingSpawn.x,
+
+                    y:
+                        existingSpawn.y
+
+                };
+
+
+                isDragging =
+                    true;
+
+
+                canvas.style.cursor =
+                    "grabbing";
+
+
+                return;
+
+            }
+
+
+            const newSpawn = {
+
+                x:
+                    snapToGrid(
+                        worldPosition.x
+                    ),
+
+                y:
+                    snapToGrid(
+                        worldPosition.y
+                    ),
+
+                width:
+                    40,
+
+                height:
+                    60,
+
+                from:
+                    spawnSourceSelect.value ||
+                    "./level-1.json"
+
+            };
+
+
+            spawns.push(
+                newSpawn
+            );
+
+
+            selectedSpawnPoint =
+                newSpawn;
+
+
+            updateSpawnControls();
+
+            saveHistoryState();
+
+            return;
+
+        }
+
 
         if (
             currentTool === "door"
@@ -1812,8 +2397,6 @@ canvas.addEventListener(
                     worldPosition.y
                 );
 
-
-            // Click existing door
 
             if (existingDoor) {
 
@@ -1857,15 +2440,6 @@ canvas.addEventListener(
             }
 
 
-            // Create new door
-
-            const doorWidth =
-                60;
-
-            const doorHeight =
-                100;
-
-
             const newDoor = {
 
                 x:
@@ -1879,10 +2453,10 @@ canvas.addEventListener(
                     ),
 
                 width:
-                    doorWidth,
+                    60,
 
                 height:
-                    doorHeight,
+                    100,
 
                 level:
                     doorLevelSelect.value ||
@@ -1902,52 +2476,101 @@ canvas.addEventListener(
 
             updateDoorControls();
 
-
             saveHistoryState();
-
 
             return;
 
         }
 
-        if (currentTool === "throne") {
-            const existingThrone = getThroneAtPosition(
-                worldPosition.x,
-                worldPosition.y
-            );
+
+        if (
+            currentTool === "throne"
+        ) {
+
+            const existingThrone =
+                getThroneAtPosition(
+                    worldPosition.x,
+                    worldPosition.y
+                );
+
 
             if (existingThrone) {
-                selectThrone(existingThrone);
+
+                selectThrone(
+                    existingThrone
+                );
+
+
                 dragStart = {
-                    x: worldPosition.x,
-                    y: worldPosition.y
+
+                    x:
+                        worldPosition.x,
+
+                    y:
+                        worldPosition.y
+
                 };
+
+
                 originalThrone = {
-                    x: existingThrone.x,
-                    y: existingThrone.y
+
+                    x:
+                        existingThrone.x,
+
+                    y:
+                        existingThrone.y
+
                 };
-                isDragging = true;
-                canvas.style.cursor = "grabbing";
+
+
+                isDragging =
+                    true;
+
+
+                canvas.style.cursor =
+                    "grabbing";
+
                 return;
+
             }
 
+
             const newThrone = {
-                x: snapToGrid(worldPosition.x),
-                y: snapToGrid(worldPosition.y),
-                width: 180,
-                height: 220
+
+                x:
+                    snapToGrid(
+                        worldPosition.x
+                    ),
+
+                y:
+                    snapToGrid(
+                        worldPosition.y
+                    ),
+
+                width:
+                    180,
+
+                height:
+                    220
+
             };
 
-            thrones.push(newThrone);
-            selectedThrone = newThrone;
+
+            thrones.push(
+                newThrone
+            );
+
+
+            selectedThrone =
+                newThrone;
+
+
             saveHistoryState();
+
             return;
+
         }
 
-
-        // ====================================================
-        // ERASE TOOL
-        // ====================================================
 
         if (
             currentTool === "erase"
@@ -1991,6 +2614,52 @@ canvas.addEventListener(
 
                     updateDoorControls();
 
+                    saveHistoryState();
+
+                }
+
+
+                return;
+
+            }
+
+
+            const clickedSpawn =
+                getSpawnPointAtPosition(
+                    worldPosition.x,
+                    worldPosition.y
+                );
+
+
+            if (clickedSpawn) {
+
+                const index =
+                    spawns.indexOf(
+                        clickedSpawn
+                    );
+
+
+                if (
+                    index !== -1
+                ) {
+
+                    spawns.splice(
+                        index,
+                        1
+                    );
+
+                    if (
+                        selectedSpawnPoint ===
+                        clickedSpawn
+                    ) {
+
+                        selectedSpawnPoint =
+                            null;
+
+                    }
+
+
+                    updateSpawnControls();
 
                     saveHistoryState();
 
@@ -2001,16 +2670,30 @@ canvas.addEventListener(
 
             }
 
-            const clickedThrone = getThroneAtPosition(
-                worldPosition.x,
-                worldPosition.y
-            );
+
+            const clickedThrone =
+                getThroneAtPosition(
+                    worldPosition.x,
+                    worldPosition.y
+                );
+
 
             if (clickedThrone) {
-                thrones.splice(thrones.indexOf(clickedThrone), 1);
+
+                thrones.splice(
+                    thrones.indexOf(
+                        clickedThrone
+                    ),
+                    1
+                );
+
+
                 clearSelection();
+
                 saveHistoryState();
+
                 return;
+
             }
 
 
@@ -2038,7 +2721,6 @@ canvas.addEventListener(
                         1
                     );
 
-
                     saveHistoryState();
 
                 }
@@ -2051,9 +2733,54 @@ canvas.addEventListener(
         }
 
 
-        // ====================================================
-        // SELECT DOOR
-        // ====================================================
+        const clickedSpawn =
+            getSpawnPointAtPosition(
+                worldPosition.x,
+                worldPosition.y
+            );
+
+
+        if (clickedSpawn) {
+
+            selectSpawnPoint(
+                clickedSpawn
+            );
+
+
+            dragStart = {
+
+                x:
+                    worldPosition.x,
+
+                y:
+                    worldPosition.y
+
+            };
+
+
+            originalSpawnPoint = {
+
+                x:
+                    clickedSpawn.x,
+
+                y:
+                    clickedSpawn.y
+
+            };
+
+
+            isDragging =
+                true;
+
+
+            canvas.style.cursor =
+                "grabbing";
+
+
+            return;
+
+        }
+
 
         const clickedDoor =
             getDoorAtPosition(
@@ -2103,30 +2830,55 @@ canvas.addEventListener(
 
         }
 
-        const clickedThrone = getThroneAtPosition(
-            worldPosition.x,
-            worldPosition.y
-        );
+
+        const clickedThrone =
+            getThroneAtPosition(
+                worldPosition.x,
+                worldPosition.y
+            );
+
 
         if (clickedThrone) {
-            selectThrone(clickedThrone);
+
+            selectThrone(
+                clickedThrone
+            );
+
+
             dragStart = {
-                x: worldPosition.x,
-                y: worldPosition.y
+
+                x:
+                    worldPosition.x,
+
+                y:
+                    worldPosition.y
+
             };
+
+
             originalThrone = {
-                x: clickedThrone.x,
-                y: clickedThrone.y
+
+                x:
+                    clickedThrone.x,
+
+                y:
+                    clickedThrone.y
+
             };
-            isDragging = true;
-            canvas.style.cursor = "grabbing";
+
+
+            isDragging =
+                true;
+
+
+            canvas.style.cursor =
+                "grabbing";
+
+
             return;
+
         }
 
-
-        // ====================================================
-        // RESIZE SELECTED PLATFORM
-        // ====================================================
 
         if (
             selectedPlatforms.length === 1 &&
@@ -2183,10 +2935,6 @@ canvas.addEventListener(
         }
 
 
-        // ====================================================
-        // CHECK PLATFORM CLICK
-        // ====================================================
-
         const platform =
             getPlatformAtPosition(
                 worldPosition.x,
@@ -2206,7 +2954,6 @@ canvas.addEventListener(
 
 
                 updatePropertiesPanel();
-
 
                 return;
 
@@ -2276,10 +3023,6 @@ canvas.addEventListener(
         }
 
 
-        // ====================================================
-        // CLICKED EMPTY SPACE
-        // ====================================================
-
         if (
             currentTool !== "platform"
         ) {
@@ -2291,11 +3034,11 @@ canvas.addEventListener(
 
         clearSelection();
 
-
         updatePropertiesPanel();
 
-
         updateDoorControls();
+
+        updateSpawnControls();
 
 
         dragStart = {
@@ -2330,10 +3073,6 @@ canvas.addEventListener(
     }
 );
 
-
-// ============================================================
-// PROPERTIES PANEL
-// ============================================================
 
 const propertiesPanel =
     document.getElementById(
@@ -2502,12 +3241,10 @@ function applyPropertyChanges() {
             x
         );
 
-
     platform.y =
         snapToGrid(
             y
         );
-
 
     platform.width =
         Math.max(
@@ -2516,7 +3253,6 @@ function applyPropertyChanges() {
                 width
             )
         );
-
 
     platform.height =
         Math.max(
@@ -2552,10 +3288,6 @@ applyProperties.addEventListener(
 );
 
 
-// ============================================================
-// MOUSE MOVE
-// ============================================================
-
 canvas.addEventListener(
     "mousemove",
     (event) => {
@@ -2574,32 +3306,44 @@ canvas.addEventListener(
                 event.offsetY
             );
 
-
             return;
 
         }
 
-
-        // ====================================================
-        // MOVE DOOR
-        // ====================================================
 
         if (
-            selectedThrone &&
-            originalThrone
+            selectedSpawnPoint &&
+            originalSpawnPoint
         ) {
-            const deltaX = snapToGrid(
-                worldPosition.x - dragStart.x
-            );
 
-            const deltaY = snapToGrid(
-                worldPosition.y - dragStart.y
-            );
+            const deltaX =
+                snapToGrid(
+                    worldPosition.x -
+                    dragStart.x
+                );
 
-            selectedThrone.x = originalThrone.x + deltaX;
-            selectedThrone.y = originalThrone.y + deltaY;
+
+            const deltaY =
+                snapToGrid(
+                    worldPosition.y -
+                    dragStart.y
+                );
+
+
+            selectedSpawnPoint.x =
+                originalSpawnPoint.x +
+                deltaX;
+
+
+            selectedSpawnPoint.y =
+                originalSpawnPoint.y +
+                deltaY;
+
+
             return;
+
         }
+
 
         if (
             selectedDoor &&
@@ -2635,9 +3379,39 @@ canvas.addEventListener(
         }
 
 
-        // ====================================================
-        // RESIZE PLATFORM
-        // ====================================================
+        if (
+            selectedThrone &&
+            originalThrone
+        ) {
+
+            const deltaX =
+                snapToGrid(
+                    worldPosition.x -
+                    dragStart.x
+                );
+
+
+            const deltaY =
+                snapToGrid(
+                    worldPosition.y -
+                    dragStart.y
+                );
+
+
+            selectedThrone.x =
+                originalThrone.x +
+                deltaX;
+
+
+            selectedThrone.y =
+                originalThrone.y +
+                deltaY;
+
+
+            return;
+
+        }
+
 
         if (
             selectedPlatforms.length === 1 &&
@@ -2710,8 +3484,6 @@ canvas.addEventListener(
                 }
 
             }
-
-
             else if (
                 resizingHandle === "topRight"
             ) {
@@ -2749,8 +3521,6 @@ canvas.addEventListener(
                 }
 
             }
-
-
             else if (
                 resizingHandle === "bottomLeft"
             ) {
@@ -2788,8 +3558,6 @@ canvas.addEventListener(
                 }
 
             }
-
-
             else if (
                 resizingHandle === "bottomRight"
             ) {
@@ -2828,15 +3596,10 @@ canvas.addEventListener(
 
             updatePropertiesPanel();
 
-
             return;
 
         }
 
-
-        // ====================================================
-        // MOVE SELECTED PLATFORMS
-        // ====================================================
 
         if (
             selectedPlatforms.length > 0 &&
@@ -2876,15 +3639,10 @@ canvas.addEventListener(
 
             updatePropertiesPanel();
 
-
             return;
 
         }
 
-
-        // ====================================================
-        // CREATE PLATFORM PREVIEW
-        // ====================================================
 
         dragCurrent = {
 
@@ -2904,10 +3662,6 @@ canvas.addEventListener(
 );
 
 
-// ============================================================
-// MOUSE UP
-// ============================================================
-
 canvas.addEventListener(
     "mouseup",
     () => {
@@ -2916,25 +3670,29 @@ canvas.addEventListener(
             "default";
 
 
+        if (!isDragging) {
+
+            return;
+
+        }
+
+
         if (
-            !isDragging
+            selectedSpawnPoint
         ) {
 
-            return;
+            isDragging =
+                false;
 
-        }
+            originalSpawnPoint =
+                null;
 
-
-        // ====================================================
-        // DOOR MOVEMENT FINISHED
-        // ====================================================
-
-        if (selectedThrone) {
-            isDragging = false;
-            originalThrone = null;
             saveHistoryState();
+
             return;
+
         }
+
 
         if (
             selectedDoor
@@ -2953,9 +3711,22 @@ canvas.addEventListener(
         }
 
 
-        // ====================================================
-        // RESIZE FINISHED
-        // ====================================================
+        if (
+            selectedThrone
+        ) {
+
+            isDragging =
+                false;
+
+            originalThrone =
+                null;
+
+            saveHistoryState();
+
+            return;
+
+        }
+
 
         if (
             resizingHandle
@@ -2986,9 +3757,7 @@ canvas.addEventListener(
             }
 
 
-            if (
-                changed
-            ) {
+            if (changed) {
 
                 saveHistoryState();
 
@@ -2998,23 +3767,16 @@ canvas.addEventListener(
             resizingHandle =
                 null;
 
-
             originalPlatforms =
                 [];
 
-
             isDragging =
                 false;
-
 
             return;
 
         }
 
-
-        // ====================================================
-        // MOVEMENT FINISHED
-        // ====================================================
 
         if (
             selectedPlatforms.length > 0 &&
@@ -3049,9 +3811,7 @@ canvas.addEventListener(
             }
 
 
-            if (
-                changed
-            ) {
+            if (changed) {
 
                 saveHistoryState();
 
@@ -3061,19 +3821,13 @@ canvas.addEventListener(
             originalPlatforms =
                 [];
 
-
             isDragging =
                 false;
-
 
             return;
 
         }
 
-
-        // ====================================================
-        // CREATE PLATFORM
-        // ====================================================
 
         if (
             !dragStart ||
@@ -3152,10 +3906,8 @@ canvas.addEventListener(
         isDragging =
             false;
 
-
         dragStart =
             null;
-
 
         dragCurrent =
             null;
@@ -3163,10 +3915,6 @@ canvas.addEventListener(
     }
 );
 
-
-// ============================================================
-// WHEEL / ZOOM
-// ============================================================
 
 canvas.addEventListener(
     "wheel",
@@ -3208,7 +3956,6 @@ canvas.addEventListener(
         const mouseX =
             event.offsetX;
 
-
         const mouseY =
             event.offsetY;
 
@@ -3243,15 +3990,10 @@ canvas.addEventListener(
 );
 
 
-// ============================================================
-// GRID DRAWING
-// ============================================================
-
 function drawGrid() {
 
     ctx.strokeStyle =
         "#444";
-
 
     ctx.lineWidth =
         1;
@@ -3289,18 +4031,15 @@ function drawGrid() {
 
         ctx.beginPath();
 
-
         ctx.moveTo(
             screenX,
             0
         );
 
-
         ctx.lineTo(
             screenX,
             canvas.height
         );
-
 
         ctx.stroke();
 
@@ -3323,18 +4062,15 @@ function drawGrid() {
 
         ctx.beginPath();
 
-
         ctx.moveTo(
             0,
             screenY
         );
 
-
         ctx.lineTo(
             canvas.width,
             screenY
         );
-
 
         ctx.stroke();
 
@@ -3343,15 +4079,7 @@ function drawGrid() {
 }
 
 
-// ============================================================
-// DRAW PLATFORMS
-// ============================================================
-
 function drawPlatforms() {
-
-    // --------------------------------------------------------
-    // Normal platforms
-    // --------------------------------------------------------
 
     for (
         const platform
@@ -3362,8 +4090,11 @@ function drawPlatforms() {
 
 
         ctx.translate(
-            -camera.x * camera.zoom,
-            -camera.y * camera.zoom
+            -camera.x *
+            camera.zoom,
+
+            -camera.y *
+            camera.zoom
         );
 
 
@@ -3383,10 +4114,6 @@ function drawPlatforms() {
 
     }
 
-
-    // --------------------------------------------------------
-    // CREATE PLATFORM PREVIEW
-    // --------------------------------------------------------
 
     if (
         isDragging &&
@@ -3431,12 +4158,16 @@ function drawPlatforms() {
 
         ctx.fillRect(
 
-            (x -
-                camera.x) *
+            (
+                x -
+                camera.x
+            ) *
                 camera.zoom,
 
-            (y -
-                camera.y) *
+            (
+                y -
+                camera.y
+            ) *
                 camera.zoom,
 
             width *
@@ -3450,24 +4181,24 @@ function drawPlatforms() {
     }
 
 
-    // --------------------------------------------------------
-    // SELECTION BORDERS
-    // --------------------------------------------------------
-
     for (
         const platform
         of selectedPlatforms
     ) {
 
         const x =
-            (platform.x -
-                camera.x) *
+            (
+                platform.x -
+                camera.x
+            ) *
                 camera.zoom;
 
 
         const y =
-            (platform.y -
-                camera.y) *
+            (
+                platform.y -
+                camera.y
+            ) *
                 camera.zoom;
 
 
@@ -3484,7 +4215,6 @@ function drawPlatforms() {
         ctx.strokeStyle =
             "yellow";
 
-
         ctx.lineWidth =
             3;
 
@@ -3499,10 +4229,6 @@ function drawPlatforms() {
     }
 
 
-    // --------------------------------------------------------
-    // RESIZE HANDLES
-    // --------------------------------------------------------
-
     if (
         selectedPlatforms.length === 1
     ) {
@@ -3512,14 +4238,18 @@ function drawPlatforms() {
 
 
         const x =
-            (platform.x -
-                camera.x) *
+            (
+                platform.x -
+                camera.x
+            ) *
                 camera.zoom;
 
 
         const y =
-            (platform.y -
-                camera.y) *
+            (
+                platform.y -
+                camera.y
+            ) *
                 camera.zoom;
 
 
@@ -3550,24 +4280,30 @@ function drawPlatforms() {
 
 
         ctx.fillRect(
-            x + width - handleSize / 2,
-            y - handleSize / 2,
+            x + width -
+                handleSize / 2,
+            y -
+                handleSize / 2,
             handleSize,
             handleSize
         );
 
 
         ctx.fillRect(
-            x - handleSize / 2,
-            y + height - handleSize / 2,
+            x -
+                handleSize / 2,
+            y + height -
+                handleSize / 2,
             handleSize,
             handleSize
         );
 
 
         ctx.fillRect(
-            x + width - handleSize / 2,
-            y + height - handleSize / 2,
+            x + width -
+                handleSize / 2,
+            y + height -
+                handleSize / 2,
             handleSize,
             handleSize
         );
@@ -3576,10 +4312,6 @@ function drawPlatforms() {
 
 }
 
-
-// ============================================================
-// DRAW DOORS
-// ============================================================
 
 function drawEditorDoors() {
 
@@ -3592,8 +4324,10 @@ function drawEditorDoors() {
 
 
         ctx.translate(
-            -camera.x * camera.zoom,
-            -camera.y * camera.zoom
+            -camera.x *
+            camera.zoom,
+            -camera.y *
+            camera.zoom
         );
 
 
@@ -3612,21 +4346,24 @@ function drawEditorDoors() {
         ctx.restore();
 
 
-        // Selection border
-
         if (
-            selectedDoor === door
+            selectedDoor ===
+            door
         ) {
 
             const x =
-                (door.x -
-                    camera.x) *
+                (
+                    door.x -
+                    camera.x
+                ) *
                     camera.zoom;
 
 
             const y =
-                (door.y -
-                    camera.y) *
+                (
+                    door.y -
+                    camera.y
+                ) *
                     camera.zoom;
 
 
@@ -3643,7 +4380,6 @@ function drawEditorDoors() {
             ctx.strokeStyle =
                 "yellow";
 
-
             ctx.lineWidth =
                 3;
 
@@ -3658,7 +4394,6 @@ function drawEditorDoors() {
 
             ctx.fillStyle =
                 "white";
-
 
             ctx.font =
                 "14px Arial";
@@ -3677,51 +4412,228 @@ function drawEditorDoors() {
 
 }
 
-function drawEditorThrones() {
-    for (const throne of thrones) {
-        ctx.save();
 
-        ctx.translate(
-            -camera.x * camera.zoom,
-            -camera.y * camera.zoom
+function drawEditorSpawnPoints() {
+
+    for (
+        const spawnPoint
+        of spawns
+    ) {
+
+        const x =
+            (
+                spawnPoint.x -
+                camera.x
+            ) *
+                camera.zoom;
+
+
+        const y =
+            (
+                spawnPoint.y -
+                camera.y
+            ) *
+                camera.zoom;
+
+
+        const width =
+            (
+                spawnPoint.width ||
+                40
+            ) *
+                camera.zoom;
+
+
+        const height =
+            (
+                spawnPoint.height ||
+                60
+            ) *
+                camera.zoom;
+
+
+        ctx.fillStyle =
+            "rgba(0, 180, 255, 0.45)";
+
+
+        ctx.fillRect(
+            x,
+            y,
+            width,
+            height
         );
 
-        ctx.scale(camera.zoom, camera.zoom);
-        drawThrone(ctx, throne);
-        ctx.restore();
 
-        if (selectedThrone === throne) {
-            const x = (throne.x - camera.x) * camera.zoom;
-            const y = (throne.y - camera.y) * camera.zoom;
-            const width = throne.width * camera.zoom;
-            const height = throne.height * camera.zoom;
+        ctx.strokeStyle =
+            "cyan";
 
-            ctx.strokeStyle = "yellow";
-            ctx.lineWidth = 3;
-            ctx.strokeRect(x, y, width, height);
-            ctx.fillStyle = "white";
-            ctx.font = "14px Arial";
-            ctx.fillText("THRONE", x, y - 8);
+        ctx.lineWidth =
+            2;
+
+
+        ctx.strokeRect(
+            x,
+            y,
+            width,
+            height
+        );
+
+
+        ctx.fillStyle =
+            "white";
+
+        ctx.font =
+            "13px Arial";
+
+
+        ctx.fillText(
+            spawnPoint.from ||
+            "No source",
+            x,
+            y - 8
+        );
+
+
+        if (
+            selectedSpawnPoint ===
+            spawnPoint
+        ) {
+
+            ctx.strokeStyle =
+                "yellow";
+
+            ctx.lineWidth =
+                3;
+
+
+            ctx.strokeRect(
+                x - 3,
+                y - 3,
+                width + 6,
+                height + 6
+            );
+
         }
+
     }
+
 }
 
 
-// ============================================================
-// SPAWN DRAWING
-// ============================================================
+function drawEditorThrones() {
+
+    for (
+        const throne
+        of thrones
+    ) {
+
+        ctx.save();
+
+
+        ctx.translate(
+            -camera.x *
+            camera.zoom,
+            -camera.y *
+            camera.zoom
+        );
+
+
+        ctx.scale(
+            camera.zoom,
+            camera.zoom
+        );
+
+
+        drawThrone(
+            ctx,
+            throne
+        );
+
+
+        ctx.restore();
+
+
+        if (
+            selectedThrone ===
+            throne
+        ) {
+
+            const x =
+                (
+                    throne.x -
+                    camera.x
+                ) *
+                    camera.zoom;
+
+
+            const y =
+                (
+                    throne.y -
+                    camera.y
+                ) *
+                    camera.zoom;
+
+
+            const width =
+                throne.width *
+                camera.zoom;
+
+
+            const height =
+                throne.height *
+                camera.zoom;
+
+
+            ctx.strokeStyle =
+                "yellow";
+
+            ctx.lineWidth =
+                3;
+
+
+            ctx.strokeRect(
+                x,
+                y,
+                width,
+                height
+            );
+
+
+            ctx.fillStyle =
+                "white";
+
+            ctx.font =
+                "14px Arial";
+
+
+            ctx.fillText(
+                "THRONE",
+                x,
+                y - 8
+            );
+
+        }
+
+    }
+
+}
+
 
 function drawSpawn() {
 
     const x =
-        (spawn.x -
-            camera.x) *
+        (
+            spawn.x -
+            camera.x
+        ) *
             camera.zoom;
 
 
     const y =
-        (spawn.y -
-            camera.y) *
+        (
+            spawn.y -
+            camera.y
+        ) *
             camera.zoom;
 
 
@@ -3732,7 +4644,6 @@ function drawSpawn() {
     ctx.fillRect(
 
         x,
-
         y,
 
         40 *
@@ -3747,7 +4658,6 @@ function drawSpawn() {
     ctx.strokeStyle =
         "white";
 
-
     ctx.lineWidth =
         2;
 
@@ -3755,7 +4665,6 @@ function drawSpawn() {
     ctx.strokeRect(
 
         x,
-
         y,
 
         40 *
@@ -3770,23 +4679,112 @@ function drawSpawn() {
     ctx.fillStyle =
         "white";
 
-
     ctx.font =
         "14px Arial";
 
 
     ctx.fillText(
-        "SPAWN",
+        "START",
         x,
         y - 8
     );
 
 }
 
+function drawEditorCollectibles() {
 
-// ============================================================
-// DRAW
-// ============================================================
+    if (
+        !level ||
+        !level.collectibles
+    ) {
+
+        return;
+
+    }
+
+
+    const collectibles =
+        level.collectibles;
+
+
+    if (
+        collectibles.gem
+    ) {
+
+        ctx.save();
+
+        ctx.translate(
+            -camera.x * camera.zoom,
+            -camera.y * camera.zoom
+        );
+
+        ctx.scale(
+            camera.zoom,
+            camera.zoom
+        );
+
+        drawGem(
+            ctx,
+            collectibles.gem
+        );
+
+        ctx.restore();
+
+    }
+
+
+    if (
+        collectibles.crown
+    ) {
+
+        ctx.save();
+
+        ctx.translate(
+            -camera.x * camera.zoom,
+            -camera.y * camera.zoom
+        );
+
+        ctx.scale(
+            camera.zoom,
+            camera.zoom
+        );
+
+        drawCrown(
+            ctx,
+            collectibles.crown
+        );
+
+        ctx.restore();
+
+    }
+
+
+    if (
+        collectibles.key
+    ) {
+
+        ctx.save();
+
+        ctx.translate(
+            -camera.x * camera.zoom,
+            -camera.y * camera.zoom
+        );
+
+        ctx.scale(
+            camera.zoom,
+            camera.zoom
+        );
+
+        drawKey(
+            ctx,
+            collectibles.key
+        );
+
+        ctx.restore();
+
+    }
+
+}
 
 function draw() {
 
@@ -3814,16 +4812,16 @@ function draw() {
 
     drawEditorDoors();
 
+    drawEditorSpawnPoints();
+
+    drawEditorCollectibles();
+
     drawEditorThrones();
 
     drawSpawn();
 
 }
 
-
-// ============================================================
-// SAVE LEVEL
-// ============================================================
 
 function createLevelData() {
 
@@ -3848,50 +4846,105 @@ function createLevelData() {
 
         },
 
+
+        spawns:
+            spawns.map(
+                spawnPoint => ({
+
+                    x:
+                        spawnPoint.x,
+
+                    y:
+                        spawnPoint.y,
+
+                    width:
+                        spawnPoint.width ||
+                        40,
+
+                    height:
+                        spawnPoint.height ||
+                        60,
+
+                    from:
+                        spawnPoint.from ||
+                        "./level-1.json"
+
+                })
+            ),
+
+
         background:
             level.background ||
             "forest",
 
+
         doors:
             doors.map(
-                door => ({
+                door => {
 
-                    x:
-                        door.x,
+                    const result = {
 
-                    y:
-                        door.y,
+                        x:
+                            door.x,
 
-                    width:
-                        door.width,
+                        y:
+                            door.y,
 
-                    height:
-                        door.height,
+                        width:
+                            door.width,
 
-                    level:
-                        door.level ||
-                        "./level-2.json",
+                        height:
+                            door.height,
 
-                    destination:
+                        level:
+                            door.level ||
+                            "./level-2.json"
+
+                    };
+
+
+                    if (
                         door.destination
-                            ? {
-                                x: door.destination.x,
-                                y: door.destination.y
-                            }
-                            : undefined
+                    ) {
 
-                })
+                        result.destination = {
+
+                            x:
+                                door.destination.x,
+
+                            y:
+                                door.destination.y
+
+                        };
+
+                    }
+
+
+                    return result;
+
+                }
             ),
+
 
         thrones:
             thrones.map(
                 throne => ({
-                    x: throne.x,
-                    y: throne.y,
-                    width: throne.width,
-                    height: throne.height
+
+                    x:
+                        throne.x,
+
+                    y:
+                        throne.y,
+
+                    width:
+                        throne.width,
+
+                    height:
+                        throne.height
+
                 })
             ),
+
 
         platforms
 
@@ -3903,13 +4956,9 @@ function createLevelData() {
 function createJSON() {
 
     return JSON.stringify(
-
         createLevelData(),
-
         null,
-
         4
-
     );
 
 }
@@ -3977,16 +5026,11 @@ async function saveLevel() {
 
     const blob =
         new Blob(
-
             [json],
-
             {
-
                 type:
                     "application/json"
-
             }
-
         );
 
 
@@ -4020,10 +5064,6 @@ async function saveLevel() {
 }
 
 
-// ============================================================
-// LOAD LEVEL BUTTON
-// ============================================================
-
 const loadButton =
     document.getElementById(
         "loadButton"
@@ -4036,7 +5076,10 @@ const levelFileInput =
     );
 
 
-if (loadButton && levelFileInput) {
+if (
+    loadButton &&
+    levelFileInput
+) {
 
     loadButton.addEventListener(
         "click",
@@ -4106,10 +5149,6 @@ if (loadButton && levelFileInput) {
 }
 
 
-// ============================================================
-// MAIN LEVEL SELECTOR
-// ============================================================
-
 const levelSelect =
     document.getElementById(
         "levelSelect"
@@ -4132,7 +5171,7 @@ const editorLevelFiles = [
 ];
 
 
-function populateLevelSelector() {
+function populateMainLevelSelector() {
 
     if (!levelSelect) {
 
@@ -4141,11 +5180,8 @@ function populateLevelSelector() {
     }
 
 
-    const currentValue =
-        levelSelect.value;
-
-
-    levelSelect.innerHTML = "";
+    levelSelect.innerHTML =
+        "";
 
 
     for (
@@ -4155,7 +5191,6 @@ function populateLevelSelector() {
 
         const option =
             new Option(
-
                 file
                     .replace("./", "")
                     .replace(".json", "")
@@ -4163,9 +5198,7 @@ function populateLevelSelector() {
                         "level-",
                         "Level "
                     ),
-
                 file
-
             );
 
 
@@ -4175,28 +5208,11 @@ function populateLevelSelector() {
 
     }
 
-
-    if (
-        currentValue &&
-        editorLevelFiles.includes(
-            currentValue
-        )
-    ) {
-
-        levelSelect.value =
-            currentValue;
-
-    }
-
 }
 
 
-populateLevelSelector();
+populateMainLevelSelector();
 
-
-// ============================================================
-// CHANGE CURRENT LEVEL
-// ============================================================
 
 if (levelSelect) {
 
@@ -4265,10 +5281,6 @@ if (levelSelect) {
 }
 
 
-// ============================================================
-// LOAD DEFAULT LEVEL
-// ============================================================
-
 async function loadLevel() {
 
     const file =
@@ -4309,15 +5321,13 @@ async function loadLevel() {
         };
 
 
-    // --------------------------------------------------------
-    // Door compatibility
-    //
-    // New format:
-    //     "doors": [...]
-    //
-    // Old format:
-    //     "door": {...}
-    // --------------------------------------------------------
+    spawns =
+        Array.isArray(
+            level.spawns
+        )
+            ? level.spawns
+            : [];
+
 
     if (
         Array.isArray(
@@ -4344,8 +5354,11 @@ async function loadLevel() {
 
     }
 
+
     thrones =
-        Array.isArray(level.thrones)
+        Array.isArray(
+            level.thrones
+        )
             ? level.thrones
             : level.throne
                 ? [level.throne]
@@ -4384,6 +5397,8 @@ async function loadLevel() {
 
     updateDoorControls();
 
+    updateSpawnControls();
+
 
     console.log(
         "Editor level loaded:",
@@ -4393,10 +5408,6 @@ async function loadLevel() {
 
 }
 
-
-// ============================================================
-// LOAD LEVEL DATA
-// ============================================================
 
 function loadLevelData(
     loadedLevel
@@ -4420,9 +5431,13 @@ function loadLevelData(
         };
 
 
-    // --------------------------------------------------------
-    // Door compatibility
-    // --------------------------------------------------------
+    spawns =
+        Array.isArray(
+            level.spawns
+        )
+            ? level.spawns
+            : [];
+
 
     if (
         Array.isArray(
@@ -4449,8 +5464,11 @@ function loadLevelData(
 
     }
 
+
     thrones =
-        Array.isArray(level.thrones)
+        Array.isArray(
+            level.thrones
+        )
             ? level.thrones
             : level.throne
                 ? [level.throne]
@@ -4483,14 +5501,17 @@ function loadLevelData(
     resizingHandle =
         null;
 
-
     originalPlatforms =
         [];
-
 
     originalDoor =
         null;
 
+    originalSpawnPoint =
+        null;
+
+    originalThrone =
+        null;
 
     isDragging =
         false;
@@ -4500,6 +5521,8 @@ function loadLevelData(
 
     updateDoorControls();
 
+    updateSpawnControls();
+
 
     console.log(
         "Editor updated with new level."
@@ -4507,10 +5530,6 @@ function loadLevelData(
 
 }
 
-
-// ============================================================
-// GAME LOOP
-// ============================================================
 
 let lastTime =
     performance.now();
@@ -4522,13 +5541,11 @@ function gameLoop(
 
     const deltaTime =
         Math.min(
-
-            (currentTime -
-                lastTime) /
-                1000,
-
+            (
+                currentTime -
+                lastTime
+            ) / 1000,
             0.1
-
         );
 
 
@@ -4551,19 +5568,13 @@ function gameLoop(
 }
 
 
-// ============================================================
-// START
-// ============================================================
-
 async function startEditor() {
 
     try {
 
         await loadLevel();
 
-
         saveHistoryState();
-
 
         requestAnimationFrame(
             gameLoop

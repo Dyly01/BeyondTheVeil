@@ -4,7 +4,9 @@ const gameState = {
 
     doubleJumpUnlocked: false,
 
-    crowCollected: false
+    crownCollected: false,
+
+    currentSpawn: null
 
 };
 
@@ -15,7 +17,9 @@ function resetGameState() {
 
     gameState.doubleJumpUnlocked = false;
 
-    gameState.crowCollected = false;
+    gameState.crownCollected = false;
+
+    gameState.currentSpawn = null;
 
 }
 

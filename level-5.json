@@ -3,9 +3,18 @@
     "width": 4200,
     "height": 1200,
     "spawn": {
-        "x": 160,
-        "y": 640
+        "x": 200,
+        "y": 675
     },
+    "spawns": [
+        {
+            "x": 200,
+            "y": 675,
+            "width": 40,
+            "height": 60,
+            "from": "./level-4.json"
+        }
+    ],
     "background": "castle",
     "doors": [
         {
@@ -29,6 +38,13 @@
                 "x": 2400,
                 "y": 0
             }
+        },
+        {
+            "x": 25,
+            "y": 650,
+            "width": 60,
+            "height": 100,
+            "level": "./level-4.json"
         }
     ],
     "thrones": [
@@ -41,8 +57,8 @@
     ],
     "platforms": [
         {
-            "x": 950,
-            "y": 430,
+            "x": 1025,
+            "y": 505,
             "width": 240,
             "height": 30,
             "style": "stone",
@@ -123,7 +139,7 @@
         {
             "x": 2350,
             "y": 725,
-            "width": 425,
+            "width": 300,
             "height": 25,
             "style": "stone",
             "color": "#737d81"
@@ -137,18 +153,10 @@
             "color": "#737d81"
         },
         {
-            "x": 1425,
-            "y": 225,
-            "width": 500,
-            "height": 100,
-            "style": "stone",
-            "color": "#737d81"
-        },
-        {
-            "x": 700,
-            "y": 600,
-            "width": 150,
-            "height": 25,
+            "x": 2075,
+            "y": 450,
+            "width": 125,
+            "height": 50,
             "style": "stone",
             "color": "#737d81"
         }

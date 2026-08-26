@@ -6,16 +6,36 @@
         "x": 100,
         "y": 775
     },
+
+    "collectibles": {
+        "gem": {
+            "x": 2350,
+            "y": 490,
+            "width": 30,
+            "height": 40
+        }
+    },
+
+    "spawns": [
+        {
+            "x": 100,
+            "y": 775,
+            "width": 40,
+            "height": 60,
+            "from": "./level-1.json"
+        }
+    ],
     "background": "forestPond",
     "doors": [
         {
-            "x": 1400,
-            "y": 100,
+            "x": 25,
+            "y": 750,
             "width": 60,
             "height": 100,
             "level": "./level-1.json"
         }
     ],
+    "thrones": [],
     "platforms": [
         {
             "x": 600,
@@ -42,8 +62,8 @@
             "color": "#aa7942"
         },
         {
-            "x": 1300,
-            "y": 500,
+            "x": 1775,
+            "y": 625,
             "width": 400,
             "height": 100,
             "style": "wood",
@@ -88,6 +108,14 @@
             "height": 100,
             "style": "wood",
             "color": "#5e4426"
+        },
+        {
+            "x": 2225,
+            "y": 550,
+            "width": 275,
+            "height": 50,
+            "style": "wood",
+            "color": "#aa7942"
         }
     ]
 }

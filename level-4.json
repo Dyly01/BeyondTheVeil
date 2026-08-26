@@ -3,47 +3,62 @@
     "width": 3000,
     "height": 1200,
     "spawn": {
-        "x": 0,
+        "x": 100,
         "y": 25
     },
+    "spawns": [
+        {
+            "x": 100,
+            "y": 25,
+            "width": 40,
+            "height": 60,
+            "from": "./level-3.json"
+        },
+        {
+            "x": 1525,
+            "y": 875,
+            "width": 40,
+            "height": 60,
+            "from": "./level-5.json"
+        }
+    ],
     "background": "forest",
     "doors": [
         {
-            "x": 1550,
+            "x": 1600,
             "y": 850,
             "width": 60,
             "height": 100,
             "level": "./level-5.json"
+        },
+        {
+            "x": 0,
+            "y": 0,
+            "width": 60,
+            "height": 100,
+            "level": "./level-3.json"
         }
     ],
     "thrones": [],
     "platforms": [
         {
-            "x": 0,
+            "x": -25,
             "y": 100,
-            "width": 600,
+            "width": 175,
             "height": 50,
             "style": "wood",
             "color": "#aa7942"
         },
         {
-            "x": 0,
-            "y": 450,
+            "x": 200,
+            "y": 250,
             "width": 200,
             "height": 30,
             "style": "stone",
             "color": "#00a3d7"
         },
         {
-            "x": 1200,
-            "y": 125,
-            "width": 250,
-            "height": 25,
-            "style": "crystal",
-            "color": "#aa7942"
-        },
-        {
-            "x": 600,
+            "x": 750,
             "y": 280,
             "width": 150,
             "height": 30,
@@ -51,56 +66,24 @@
             "color": "#263e0f"
         },
         {
-            "x": 0,
-            "y": 850,
-            "width": 225,
-            "height": 100,
-            "style": "wood",
-            "color": "#8d8600"
-        },
-        {
-            "x": 525,
-            "y": 500,
-            "width": 300,
-            "height": 50,
-            "style": "moss",
-            "color": "#4f5503"
-        },
-        {
-            "x": 300,
-            "y": 825,
-            "width": 225,
-            "height": 25,
-            "style": "wood",
-            "color": "#4f7a28"
-        },
-        {
             "x": 1325,
             "y": 950,
-            "width": 425,
+            "width": 375,
             "height": 25,
             "style": "stone",
             "color": "#737d81"
         },
         {
-            "x": 850,
-            "y": 925,
-            "width": 225,
+            "x": 1250,
+            "y": 675,
+            "width": 125,
             "height": 25,
-            "style": "neon",
-            "color": "#d357fe"
-        },
-        {
-            "x": 1000,
-            "y": 775,
-            "width": 175,
-            "height": 75,
             "style": "moss",
-            "color": "#4f5503"
+            "color": "#808080"
         },
         {
-            "x": 1275,
-            "y": 750,
+            "x": 1075,
+            "y": 550,
             "width": 100,
             "height": 25,
             "style": "neon",
@@ -163,12 +146,20 @@
             "color": "#53d5fd"
         },
         {
-            "x": 975,
-            "y": 475,
+            "x": 950,
+            "y": 425,
             "width": 125,
             "height": 25,
             "style": "moss",
             "color": "#4f5503"
+        },
+        {
+            "x": 1125,
+            "y": 825,
+            "width": 75,
+            "height": 25,
+            "style": "moss",
+            "color": "#808080"
         }
     ]
 }

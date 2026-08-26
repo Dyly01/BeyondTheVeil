@@ -3,6 +3,7 @@ import {
     setResetCallback
 } from "./pause.js";
 
+
 import {
     player,
     spawnPlayer,
@@ -10,74 +11,67 @@ import {
     drawPlayer
 } from "./player.js";
 
+
 import {
     level,
     loadLevel,
-    changeLevel
+    changeLevel,
+    getCurrentLevelFile
 } from "./level.js";
 
+
 import {
-    updateInput,
-    isKeyPressed
+    updateInput
 } from "./input.js";
+
 
 import {
     camera,
     updateCamera
 } from "./camera.js";
 
+
 import {
     isColliding
 } from "./physics.js";
+
 
 import {
     drawBackground,
     drawPlatform,
     drawDoor,
     drawGem,
-    drawKey,
-    drawThrone
+    drawCrown,
+    drawKey
 } from "./graphics.js";
+
 
 import {
     updateLives,
     isGameOver,
     drawLives,
-    drawGameOver
+    drawGameOver,
+    resetLives
 } from "./lives.js";
 
 
-// ============================================================
-// CANVAS
-// ============================================================
+import {
+    gameState,
+    resetGameState
+} from "./gameState.js";
+
 
 const canvas =
     document.getElementById(
         "gameCanvas"
     );
 
+
 const ctx =
     canvas.getContext(
         "2d"
     );
 
-
-// ============================================================
-// GLOBAL COLLECTIBLES
-// ============================================================
-
-const collectibles = {
-
-    gem: false,
-
-    key: false
-
-};
-
-
-// ============================================================
-// RESIZE
-// ============================================================
 
 function resizeCanvas() {
 
@@ -99,18 +93,56 @@ window.addEventListener(
 resizeCanvas();
 
 
-// ============================================================
-// LEVEL TRANSITION
-// ============================================================
-
-let changingLevel = false;
-
-let gameWon = false;
+let changingLevel =
+    false;
 
 
-// ============================================================
-// COLLECTIBLES
-// ============================================================
+// Applies the global collected state to the collectibles
+// that exist in the currently loaded level.
+
+function applyCollectibleState() {
+
+    if (
+        !level ||
+        !level.collectibles
+    ) {
+
+        return;
+
+    }
+
+
+    if (
+        level.collectibles.gem
+    ) {
+
+        level.collectibles.gem.collected =
+            gameState.doubleJumpUnlocked;
+
+    }
+
+
+    if (
+        level.collectibles.crown
+    ) {
+
+        level.collectibles.crown.collected =
+            gameState.crownCollected;
+
+    }
+
+
+    if (
+        level.collectibles.key
+    ) {
+
+        level.collectibles.key.collected =
+            gameState.keyCollected;
+
+    }
+
+}
+
 
 function checkCollectibles() {
 
@@ -140,14 +172,38 @@ function checkCollectibles() {
         current.gem.collected =
             true;
 
-        collectibles.gem =
+        gameState.doubleJumpUnlocked =
             true;
 
         player.canDoubleJump =
             true;
 
+
         console.log(
-            "Gem collected! Double jump unlocked."
+            "Gem collected!"
+        );
+
+    }
+
+
+    if (
+        current.crown &&
+        !current.crown.collected &&
+        isColliding(
+            player,
+            current.crown
+        )
+    ) {
+
+        current.crown.collected =
+            true;
+
+        gameState.crownCollected =
+            true;
+
+
+        console.log(
+            "Crown collected!"
         );
 
     }
@@ -165,8 +221,9 @@ function checkCollectibles() {
         current.key.collected =
             true;
 
-        collectibles.key =
+        gameState.keyCollected =
             true;
+
 
         console.log(
             "Key collected!"
@@ -177,43 +234,82 @@ function checkCollectibles() {
 }
 
 
-// ============================================================
-// RESET
-// ============================================================
-
-async function resetLevel() {
+function findSpawnForSource(
+    sourceLevel
+) {
 
     if (
         !level ||
-        changingLevel
+        !Array.isArray(
+            level.spawns
+        )
     ) {
+
+        return null;
+
+    }
+
+
+    for (
+        const spawn of level.spawns
+    ) {
+
+        if (
+            spawn.from ===
+            sourceLevel
+        ) {
+
+            return spawn;
+
+        }
+
+    }
+
+
+    return null;
+
+}
+
+
+function setArrivalSpawn(
+    previousLevel
+) {
+
+    const arrivalSpawn =
+        findSpawnForSource(
+            previousLevel
+        );
+
+
+    if (
+        arrivalSpawn
+    ) {
+
+        gameState.currentSpawn = {
+
+            x:
+                arrivalSpawn.x,
+
+            y:
+                arrivalSpawn.y
+
+        };
+
 
         return;
 
     }
 
 
-    changingLevel =
-        true;
-
-
-    const currentLevel =
-        level.name;
-
-
-    console.log(
-        "Resetting current level:",
-        currentLevel
-    );
-
-
-    changingLevel =
-        false;
+    gameState.currentSpawn =
+        null;
 
 }
 
 
-async function resetGame() {
+async function enterDoor(
+    door
+) {
 
     if (
         changingLevel
@@ -224,75 +320,102 @@ async function resetGame() {
     }
 
 
+    if (
+        door.requiresKey &&
+        !gameState.keyCollected
+    ) {
+
+        console.log(
+            "This door requires a key."
+        );
+
+        return;
+
+    }
+
+
+    const previousLevel =
+        getCurrentLevelFile();
+
+
     changingLevel =
         true;
 
 
     console.log(
-        "Full game reset"
+        "Entering:",
+        door.level
     );
-
-
-    collectibles.gem =
-        false;
-
-    collectibles.key =
-        false;
-
-
-    player.canDoubleJump =
-        false;
-
-    player.doubleJumpUsed =
-        false;
-
-
-    const livesModule =
-        await import("./lives.js");
-
-    livesModule.resetLives();
 
 
     const success =
-        await loadLevel(
-            "./level-1.json"
+        await changeLevel(
+            door.level
         );
 
 
     if (
-        !success ||
-        !level
+        success &&
+        level
     ) {
 
-        console.error(
-            "Could not reset game."
+        applyCollectibleState();
+
+
+        setArrivalSpawn(
+            previousLevel
         );
 
-        changingLevel =
-            false;
 
-        return;
+        if (
+            gameState.currentSpawn
+        ) {
+
+            player.x =
+                gameState.currentSpawn.x;
+
+            player.y =
+                gameState.currentSpawn.y;
+
+            player.velocityX =
+                0;
+
+            player.velocityY =
+                0;
+
+            player.grounded =
+                false;
+
+            player.doubleJumpUsed =
+                false;
+
+        }
+        else {
+
+            spawnPlayer(
+                level
+            );
+
+        }
+
+
+        if (
+            gameState.doubleJumpUnlocked
+        ) {
+
+            player.canDoubleJump =
+                true;
+
+        }
+
+
+        camera.x =
+            0;
+
+        camera.y =
+            0;
 
     }
-
-
-    spawnPlayer(
-        level
-    );
-
-
-    camera.x =
-        0;
-
-    camera.y =
-        0;
-
-
-    player.velocityX =
-        0;
-
-    player.velocityY =
-        0;
 
 
     changingLevel =
@@ -300,21 +423,14 @@ async function resetGame() {
 
 }
 
-
-setResetCallback(
-    resetGame
-);
-
-
-// ============================================================
-// CHECK DOORS
-// ============================================================
 
 async function checkDoors() {
 
     if (
         !level ||
-        !Array.isArray(level.doors) ||
+        !Array.isArray(
+            level.doors
+        ) ||
         changingLevel
     ) {
 
@@ -327,7 +443,10 @@ async function checkDoors() {
         const door of level.doors
     ) {
 
-        if (!door || (!door.level && !door.destination)) {
+        if (
+            !door ||
+            !door.level
+        ) {
 
             continue;
 
@@ -354,134 +473,13 @@ async function checkDoors() {
 }
 
 
-// ============================================================
-// ENTER DOOR
-// ============================================================
-
-async function enterDoor(
-    door
-) {
-
-    if (
-        changingLevel
-    ) {
-
-        return;
-
-    }
-
-
-    changingLevel =
-        true;
-
-    if (door.destination) {
-        player.x = door.destination.x;
-        player.y = door.destination.y;
-        player.velocityX = 0;
-        player.velocityY = 0;
-        changingLevel = false;
-        return;
-    }
-
-
-    const targetLevel =
-        door.level;
-
-
-    console.log(
-        "Entering door:",
-        targetLevel
-    );
-
-
-    const success =
-        await changeLevel(
-            targetLevel
-        );
-
-
-    if (
-        success &&
-        level
-    ) {
-
-        spawnPlayer(
-            level
-        );
-
-
-        camera.x =
-            0;
-
-        camera.y =
-            0;
-
-
-        player.velocityX =
-            0;
-
-        player.velocityY =
-            0;
-
-    }
-
-
-    changingLevel =
-        false;
-
-}
-
-function checkThrones() {
-    if (!level || gameWon || !isKeyPressed("e")) {
-        return;
-    }
-
-    const thrones = Array.isArray(level.thrones)
-        ? level.thrones
-        : level.throne
-            ? [level.throne]
-            : [];
-
-    for (const throne of thrones) {
-        if (!throne) {
-            continue;
-        }
-
-        const interactionZone = {
-            x: throne.x - 60,
-            y: throne.y - 60,
-            width: throne.width + 120,
-            height: throne.height + 120
-        };
-
-        if (isColliding(player, interactionZone)) {
-            gameWon = true;
-            player.velocityX = 0;
-            player.velocityY = 0;
-            return;
-        }
-    }
-}
-
-
-// ============================================================
-// UPDATE
-// ============================================================
-
 function update(
     deltaTime
 ) {
 
-    if (gameWon) {
-        updateInput();
-        return;
-    }
-
-    // --------------------------------------------------------
-    // Game Over
-    // --------------------------------------------------------
-
-    if (isGameOver()) {
+    if (
+        isGameOver()
+    ) {
 
         updateInput();
 
@@ -524,8 +522,6 @@ function update(
 
     checkDoors();
 
-    checkThrones();
-
 
     updateCamera(
         player,
@@ -538,10 +534,6 @@ function update(
 }
 
 
-// ============================================================
-// DRAW
-// ============================================================
-
 function draw() {
 
     ctx.clearRect(
@@ -552,7 +544,9 @@ function draw() {
     );
 
 
-    if (!level) {
+    if (
+        !level
+    ) {
 
         return;
 
@@ -608,7 +602,9 @@ function draw() {
             const door of level.doors
         ) {
 
-            if (!door) {
+            if (
+                !door
+            ) {
 
                 continue;
 
@@ -622,16 +618,6 @@ function draw() {
 
         }
 
-    }
-
-    const thrones = Array.isArray(level.thrones)
-        ? level.thrones
-        : level.throne
-            ? [level.throne]
-            : [];
-
-    for (const throne of thrones) {
-        drawThrone(ctx, throne);
     }
 
 
@@ -653,6 +639,19 @@ function draw() {
 
 
         if (
+            level.collectibles.crown &&
+            !level.collectibles.crown.collected
+        ) {
+
+            drawCrown(
+                ctx,
+                level.collectibles.crown
+            );
+
+        }
+
+
+        if (
             level.collectibles.key &&
             !level.collectibles.key.collected
         ) {
@@ -668,8 +667,7 @@ function draw() {
 
 
     if (
-        !isGameOver() &&
-        !gameWon
+        !isGameOver()
     ) {
 
         drawPlayer(
@@ -692,36 +690,12 @@ function draw() {
         canvas
     );
 
-    if (gameWon) {
-        ctx.fillStyle = "rgba(5, 7, 12, 0.78)";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = "#f0d477";
-        ctx.textAlign = "center";
-        ctx.font = "bold 48px Georgia";
-        ctx.fillText(
-            "THE VEIL HAS FALLEN",
-            canvas.width / 2,
-            canvas.height / 2 - 20
-        );
-        ctx.fillStyle = "white";
-        ctx.font = "22px Georgia";
-        ctx.fillText(
-            "The throne has accepted you.",
-            canvas.width / 2,
-            canvas.height / 2 + 28
-        );
-        ctx.textAlign = "start";
-    }
-
 }
 
 
-// ============================================================
-// GAME LOOP
-// ============================================================
-
 const FIXED_DT =
     1 / 60;
+
 
 const MAX_FRAME_TIME =
     0.1;
@@ -729,6 +703,7 @@ const MAX_FRAME_TIME =
 
 let lastTime =
     performance.now();
+
 
 let accumulator =
     0;
@@ -782,9 +757,96 @@ function gameLoop(
 }
 
 
-// ============================================================
-// START GAME
-// ============================================================
+async function resetGame() {
+
+    if (
+        changingLevel
+    ) {
+
+        return;
+
+    }
+
+
+    changingLevel =
+        true;
+
+
+    console.log(
+        "Full game reset"
+    );
+
+
+    resetGameState();
+
+
+    resetLives();
+
+
+    player.canDoubleJump =
+        false;
+
+    player.doubleJumpUsed =
+        false;
+
+
+    const success =
+        await loadLevel(
+            "./level-1.json"
+        );
+
+
+    if (
+        !success ||
+        !level
+    ) {
+
+        changingLevel =
+            false;
+
+        return;
+
+    }
+
+
+    applyCollectibleState();
+
+
+    spawnPlayer(
+        level
+    );
+
+
+    camera.x =
+        0;
+
+    camera.y =
+        0;
+
+
+    player.velocityX =
+        0;
+
+    player.velocityY =
+        0;
+
+
+    changingLevel =
+        false;
+
+}
+
+
+setResetCallback(
+    resetGame
+);
+
+
+window.addEventListener(
+    "gameReset",
+    resetGame
+);
+
 
 async function startGame() {
 
@@ -808,9 +870,22 @@ async function startGame() {
     }
 
 
+    applyCollectibleState();
+
+
     spawnPlayer(
         level
     );
+
+
+    if (
+        gameState.doubleJumpUnlocked
+    ) {
+
+        player.canDoubleJump =
+            true;
+
+    }
 
 
     requestAnimationFrame(

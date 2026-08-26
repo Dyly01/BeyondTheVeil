@@ -4,27 +4,22 @@ import {
 } from "./player.js";
 
 import {
-    level,
-    loadLevel
+    level
 } from "./level.js";
 
+import {
+    gameState
+} from "./gameState.js";
+
+
 const livesDisplay =
-    document.getElementById("livesDisplay");
+    document.getElementById(
+        "livesDisplay"
+    );
 
 
-// ============================================================
-// SETTINGS
-// ============================================================
-
-const MAX_LIVES = 5;
-
-const START_LEVEL =
-    "./level-1.json";
-
-
-// ============================================================
-// STATE
-// ============================================================
+const MAX_LIVES =
+    5;
 
 let lives =
     MAX_LIVES;
@@ -35,10 +30,6 @@ let gameOver =
 let resetting =
     false;
 
-
-// ============================================================
-// GETTERS
-// ============================================================
 
 function getLives() {
 
@@ -54,10 +45,6 @@ function isGameOver() {
 }
 
 
-// ============================================================
-// RESET LIVES
-// ============================================================
-
 function resetLives() {
 
     lives =
@@ -69,20 +56,53 @@ function resetLives() {
     resetting =
         false;
 
+}
 
-    console.log(
-        "Lives reset:",
-        lives
+
+function respawnPlayer() {
+
+    if (!level) {
+
+        return;
+
+    }
+
+
+    if (
+        gameState.currentSpawn
+    ) {
+
+        player.x =
+            gameState.currentSpawn.x;
+
+        player.y =
+            gameState.currentSpawn.y;
+
+        player.velocityX =
+            0;
+
+        player.velocityY =
+            0;
+
+        player.grounded =
+            false;
+
+        player.doubleJumpUsed =
+            false;
+
+        return;
+
+    }
+
+
+    spawnPlayer(
+        level
     );
 
 }
 
 
-// ============================================================
-// PLAYER DEATH
-// ============================================================
-
-async function loseLife() {
+function loseLife() {
 
     if (
         gameOver ||
@@ -103,39 +123,29 @@ async function loseLife() {
     );
 
 
-    // ========================================================
-    // GAME OVER
-    // ========================================================
+    if (
+        lives <= 0
+    ) {
 
-    if (lives <= 0) {
+        lives =
+            0;
 
-        lives = 0;
-
-        gameOver = true;
-
+        gameOver =
+            true;
 
         console.log(
             "GAME OVER"
         );
-
 
         return;
 
     }
 
 
-    // ========================================================
-    // RESPAWN CURRENT LEVEL
-    // ========================================================
-
-    spawnPlayer(level);
+    respawnPlayer();
 
 }
 
-
-// ============================================================
-// CHECK DEATH
-// ============================================================
 
 function updateLives() {
 
@@ -150,8 +160,6 @@ function updateLives() {
     }
 
 
-    // Player fell below the level
-
     if (
         player.y >
         level.height
@@ -164,97 +172,31 @@ function updateLives() {
 }
 
 
-// ============================================================
-// ENTER KEY → RESET AFTER GAME OVER
-// ============================================================
+function drawLives() {
 
-document.addEventListener(
-    "keydown",
-    (event) => {
-
-        if (!gameOver) {
-
-            return;
-
-        }
-
-
-        if (
-            event.key === "Enter"
-        ) {
-
-            event.preventDefault();
-
-            resetGame();
-
-        }
-
-    }
-);
-
-
-// ============================================================
-// RESET AFTER GAME OVER
-// ============================================================
-
-async function resetGame() {
-
-    if (resetting) {
+    if (
+        !livesDisplay
+    ) {
 
         return;
 
     }
 
 
-    resetting = true;
+    if (
+        gameOver
+    ) {
 
-
-    console.log(
-        "Resetting game..."
-    );
-
-
-    resetLives();
-
-
-    await loadLevel(
-        START_LEVEL
-    );
-
-
-    if (level) {
-
-        spawnPlayer(level);
-
-    }
-
-
-    resetting = false;
-
-
-    console.log(
-        "Game reset."
-    );
-
-}
-
-
-// ============================================================
-// DRAW LIVES
-// ============================================================
-
-function drawLives(ctx) {
-
-    if (gameOver) {
-
-        livesDisplay.innerHTML = "";
+        livesDisplay.innerHTML =
+            "";
 
         return;
 
     }
 
 
-    livesDisplay.innerHTML = "";
+    livesDisplay.innerHTML =
+        "";
 
 
     for (
@@ -264,7 +206,9 @@ function drawLives(ctx) {
     ) {
 
         const heart =
-            document.createElement("span");
+            document.createElement(
+                "span"
+            );
 
 
         heart.textContent =
@@ -282,16 +226,14 @@ function drawLives(ctx) {
 }
 
 
-// ============================================================
-// DRAW GAME OVER
-// ============================================================
-
 function drawGameOver(
     ctx,
     canvas
 ) {
 
-    if (!gameOver) {
+    if (
+        !gameOver
+    ) {
 
         return;
 
@@ -300,10 +242,6 @@ function drawGameOver(
 
     ctx.save();
 
-
-    // --------------------------------------------------------
-    // Dark overlay
-    // --------------------------------------------------------
 
     ctx.fillStyle =
         "rgba(0, 0, 0, 0.75)";
@@ -316,10 +254,6 @@ function drawGameOver(
         canvas.height
     );
 
-
-    // --------------------------------------------------------
-    // Title
-    // --------------------------------------------------------
 
     ctx.fillStyle =
         "white";
@@ -344,10 +278,6 @@ function drawGameOver(
     );
 
 
-    // --------------------------------------------------------
-    // Restart text
-    // --------------------------------------------------------
-
     ctx.font =
         "24px Arial";
 
@@ -364,9 +294,37 @@ function drawGameOver(
 }
 
 
-// ============================================================
-// EXPORT
-// ============================================================
+document.addEventListener(
+    "keydown",
+    (event) => {
+
+        if (
+            !gameOver
+        ) {
+
+            return;
+
+        }
+
+
+        if (
+            event.key === "Enter"
+        ) {
+
+            event.preventDefault();
+
+
+            window.dispatchEvent(
+                new Event(
+                    "gameReset"
+                )
+            );
+
+        }
+
+    }
+);
+
 
 export {
     MAX_LIVES,
@@ -374,8 +332,7 @@ export {
     isGameOver,
     updateLives,
     loseLife,
-    resetGame,
+    resetLives,
     drawLives,
-    drawGameOver,
-    resetLives
+    drawGameOver
 };

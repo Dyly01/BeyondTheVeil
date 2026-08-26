@@ -1067,6 +1067,7 @@ export {
     drawPlatform,
     drawDoor,
     drawGem,
+    drawCrown,
     drawKey,
     drawThrone
 };
