@@ -72,6 +72,8 @@ let gameTime = 0;
 
 let introOpen = false;
 
+let doubleJumpInfoOpen = false;
+
 
 const canvas =
     document.getElementById(
@@ -208,6 +210,7 @@ function checkCollectibles() {
         player.canDoubleJump =
             true;
 
+        showDoubleJumpInfo();
 
         console.log(
             "Gem collected!"
@@ -542,6 +545,64 @@ function checkGoal() {
 
 }
 
+function showDoubleJumpInfo() {
+
+    if (
+        !shouldShowInfoScreens() ||
+        gameState.doubleJumpInfoShown
+    ) {
+
+        return;
+
+    }
+
+
+    const info =
+        document.getElementById(
+            "doubleJumpInfo"
+        );
+
+
+    if (!info) {
+
+        return;
+
+    }
+
+
+    doubleJumpInfoOpen = true;
+
+    gameState.doubleJumpInfoShown =
+        true;
+
+    info.style.display =
+        "flex";
+
+}
+
+
+function closeDoubleJumpInfo() {
+
+    const info =
+        document.getElementById(
+            "doubleJumpInfo"
+        );
+
+
+    if (!info) {
+
+        return;
+
+    }
+
+
+    doubleJumpInfoOpen = false;
+
+    info.style.display =
+        "none";
+
+}
+
 function showIntroScreen() {
 
     if (
@@ -622,12 +683,46 @@ function closeIntroScreen() {
 
 }
 
+document.addEventListener(
+    "keydown",
+    (event) => {
+
+        if (
+            !doubleJumpInfoOpen
+        ) {
+
+            return;
+
+        }
+
+
+        if (
+            event.key === "Enter" ||
+            event.key === " "
+        ) {
+
+            event.preventDefault();
+
+            closeDoubleJumpInfo();
+
+        }
+
+    }
+);
 
 function update(
     deltaTime
 ) {
 
     if (introOpen) {
+
+        updateInput();
+
+        return;
+
+    }
+
+    if (doubleJumpInfoOpen) {
 
         updateInput();
 
