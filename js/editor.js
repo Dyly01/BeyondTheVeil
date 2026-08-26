@@ -3,7 +3,8 @@ import {
     PLATFORM_STYLES,
     drawBackground,
     drawPlatform,
-    drawDoor
+    drawDoor,
+    drawThrone
 } from "./graphics.js";
 
 
@@ -96,6 +97,8 @@ let spawn = {
 
 let doors = [];
 
+let thrones = [];
+
 
 // ============================================================
 // HISTORY
@@ -116,6 +119,8 @@ function createEditorSnapshot() {
             spawn,
 
             doors,
+
+            thrones,
 
             level
 
@@ -165,6 +170,13 @@ function restoreHistoryState(snapshot) {
         JSON.parse(
             JSON.stringify(
                 snapshot.doors || []
+            )
+        );
+
+    thrones =
+        JSON.parse(
+            JSON.stringify(
+                snapshot.thrones || []
             )
         );
 
@@ -243,7 +255,6 @@ function redo() {
 
     }
 
-
     historyIndex++;
 
 
@@ -307,6 +318,14 @@ document.addEventListener(
             if (selectedDoor) {
 
                 deleteSelectedDoor();
+
+                return;
+
+            }
+
+            if (selectedThrone) {
+
+                deleteSelectedThrone();
 
                 return;
 
@@ -508,12 +527,16 @@ let selectedPlatforms = [];
 
 let selectedDoor = null;
 
+let selectedThrone = null;
+
 
 function clearSelection() {
 
     selectedPlatforms = [];
 
     selectedDoor = null;
+
+    selectedThrone = null;
 
 }
 
@@ -525,6 +548,8 @@ function selectPlatform(platform) {
     ];
 
     selectedDoor = null;
+
+    selectedThrone = null;
 
     updateDoorControls();
 
@@ -560,6 +585,8 @@ function togglePlatformSelection(platform) {
 
     selectedDoor = null;
 
+    selectedThrone = null;
+
     updateDoorControls();
 
 }
@@ -571,6 +598,8 @@ function selectAllPlatforms() {
         [...platforms];
 
     selectedDoor = null;
+
+    selectedThrone = null;
 
     updateDoorControls();
 
@@ -604,9 +633,22 @@ function selectDoor(door) {
 
     selectedPlatforms = [];
 
+    selectedThrone = null;
+
 
     updateDoorControls();
 
+}
+
+function selectThrone(throne) {
+    if (!throne) {
+        return;
+    }
+
+    selectedThrone = throne;
+    selectedPlatforms = [];
+    selectedDoor = null;
+    updateDoorControls();
 }
 
 
@@ -662,6 +704,22 @@ function deleteSelectedDoor() {
 
 }
 
+function deleteSelectedThrone() {
+    if (!selectedThrone) {
+        return;
+    }
+
+    const index = thrones.indexOf(selectedThrone);
+
+    if (index !== -1) {
+        thrones.splice(index, 1);
+        saveHistoryState();
+    }
+
+    selectedThrone = null;
+    isDragging = false;
+}
+
 
 // ============================================================
 // DRAG / RESIZE STATE
@@ -692,6 +750,9 @@ let originalPlatforms =
 
 
 let originalDoor =
+    null;
+
+let originalThrone =
     null;
 
 
@@ -953,6 +1014,29 @@ doorTool.addEventListener(
     }
 );
 
+let throneTool =
+    document.getElementById(
+        "throneTool"
+    );
+
+if (!throneTool) {
+    throneTool = document.createElement("button");
+    throneTool.id = "throneTool";
+    throneTool.textContent = "Throne";
+    toolbar.appendChild(throneTool);
+}
+
+throneTool.addEventListener(
+    "click",
+    () => {
+        currentTool = "throne";
+        clearSelection();
+        updatePropertiesPanel();
+        updateDoorControls();
+        canvas.style.cursor = "crosshair";
+    }
+);
+
 
 // ============================================================
 // DOOR LEVEL SELECTOR
@@ -1005,6 +1089,37 @@ if (!doorLevelSelect) {
     );
 
 }
+
+let doorDestinationContainer =
+    document.getElementById(
+        "doorDestinationContainer"
+    );
+
+if (!doorDestinationContainer) {
+    doorDestinationContainer = document.createElement("label");
+    doorDestinationContainer.id = "doorDestinationContainer";
+    doorDestinationContainer.innerHTML = "Inside X/Y ";
+
+    const destinationX = document.createElement("input");
+    destinationX.id = "doorDestinationX";
+    destinationX.type = "number";
+    destinationX.placeholder = "X";
+
+    const destinationY = document.createElement("input");
+    destinationY.id = "doorDestinationY";
+    destinationY.type = "number";
+    destinationY.placeholder = "Y";
+
+    doorDestinationContainer.append(
+        destinationX,
+        destinationY
+    );
+
+    toolbar.appendChild(doorDestinationContainer);
+}
+
+const doorDestinationX = document.getElementById("doorDestinationX");
+const doorDestinationY = document.getElementById("doorDestinationY");
 
 
 const defaultLevelFiles = [
@@ -1118,9 +1233,43 @@ function updateDoorControls() {
             selectedDoor.level ||
             "./level-2.json";
 
+        doorDestinationX.value =
+            selectedDoor.destination?.x ?? "";
+
+        doorDestinationY.value =
+            selectedDoor.destination?.y ?? "";
+
     }
 
+    doorDestinationContainer.style.display =
+        selectedDoor || currentTool === "door"
+            ? "flex"
+            : "none";
+
 }
+
+function updateDoorDestination() {
+    if (!selectedDoor) {
+        return;
+    }
+
+    const x = Number(doorDestinationX.value);
+    const y = Number(doorDestinationY.value);
+
+    if (Number.isFinite(x) && Number.isFinite(y)) {
+        selectedDoor.destination = {
+            x: snapToGrid(x),
+            y: snapToGrid(y)
+        };
+    } else {
+        delete selectedDoor.destination;
+    }
+
+    saveHistoryState();
+}
+
+doorDestinationX.addEventListener("change", updateDoorDestination);
+doorDestinationY.addEventListener("change", updateDoorDestination);
 
 
 // ============================================================
@@ -1196,6 +1345,23 @@ function getDoorAtPosition(
 
     return null;
 
+}
+
+function getThroneAtPosition(x, y) {
+    for (let i = thrones.length - 1; i >= 0; i--) {
+        const throne = thrones[i];
+
+        if (
+            x >= throne.x &&
+            x <= throne.x + throne.width &&
+            y >= throne.y &&
+            y <= throne.y + throne.height
+        ) {
+            return throne;
+        }
+    }
+
+    return null;
 }
 
 
@@ -1429,6 +1595,29 @@ function updateCursor(
 
         return;
 
+    }
+
+    if (
+        selectedThrone &&
+        getThroneAtPosition(
+            worldPosition.x,
+            worldPosition.y
+        ) === selectedThrone
+    ) {
+        canvas.style.cursor = "grab";
+        return;
+    }
+
+    if (currentTool === "throne") {
+        const hoveredThrone = getThroneAtPosition(
+            worldPosition.x,
+            worldPosition.y
+        );
+
+        if (hoveredThrone) {
+            canvas.style.cursor = "grab";
+            return;
+        }
     }
 
 
@@ -1721,6 +1910,40 @@ canvas.addEventListener(
 
         }
 
+        if (currentTool === "throne") {
+            const existingThrone = getThroneAtPosition(
+                worldPosition.x,
+                worldPosition.y
+            );
+
+            if (existingThrone) {
+                selectThrone(existingThrone);
+                dragStart = {
+                    x: worldPosition.x,
+                    y: worldPosition.y
+                };
+                originalThrone = {
+                    x: existingThrone.x,
+                    y: existingThrone.y
+                };
+                isDragging = true;
+                canvas.style.cursor = "grabbing";
+                return;
+            }
+
+            const newThrone = {
+                x: snapToGrid(worldPosition.x),
+                y: snapToGrid(worldPosition.y),
+                width: 180,
+                height: 220
+            };
+
+            thrones.push(newThrone);
+            selectedThrone = newThrone;
+            saveHistoryState();
+            return;
+        }
+
 
         // ====================================================
         // ERASE TOOL
@@ -1776,6 +1999,18 @@ canvas.addEventListener(
 
                 return;
 
+            }
+
+            const clickedThrone = getThroneAtPosition(
+                worldPosition.x,
+                worldPosition.y
+            );
+
+            if (clickedThrone) {
+                thrones.splice(thrones.indexOf(clickedThrone), 1);
+                clearSelection();
+                saveHistoryState();
+                return;
             }
 
 
@@ -1866,6 +2101,26 @@ canvas.addEventListener(
 
             return;
 
+        }
+
+        const clickedThrone = getThroneAtPosition(
+            worldPosition.x,
+            worldPosition.y
+        );
+
+        if (clickedThrone) {
+            selectThrone(clickedThrone);
+            dragStart = {
+                x: worldPosition.x,
+                y: worldPosition.y
+            };
+            originalThrone = {
+                x: clickedThrone.x,
+                y: clickedThrone.y
+            };
+            isDragging = true;
+            canvas.style.cursor = "grabbing";
+            return;
         }
 
 
@@ -2330,6 +2585,23 @@ canvas.addEventListener(
         // ====================================================
 
         if (
+            selectedThrone &&
+            originalThrone
+        ) {
+            const deltaX = snapToGrid(
+                worldPosition.x - dragStart.x
+            );
+
+            const deltaY = snapToGrid(
+                worldPosition.y - dragStart.y
+            );
+
+            selectedThrone.x = originalThrone.x + deltaX;
+            selectedThrone.y = originalThrone.y + deltaY;
+            return;
+        }
+
+        if (
             selectedDoor &&
             originalDoor
         ) {
@@ -2656,6 +2928,13 @@ canvas.addEventListener(
         // ====================================================
         // DOOR MOVEMENT FINISHED
         // ====================================================
+
+        if (selectedThrone) {
+            isDragging = false;
+            originalThrone = null;
+            saveHistoryState();
+            return;
+        }
 
         if (
             selectedDoor
@@ -3398,6 +3677,35 @@ function drawEditorDoors() {
 
 }
 
+function drawEditorThrones() {
+    for (const throne of thrones) {
+        ctx.save();
+
+        ctx.translate(
+            -camera.x * camera.zoom,
+            -camera.y * camera.zoom
+        );
+
+        ctx.scale(camera.zoom, camera.zoom);
+        drawThrone(ctx, throne);
+        ctx.restore();
+
+        if (selectedThrone === throne) {
+            const x = (throne.x - camera.x) * camera.zoom;
+            const y = (throne.y - camera.y) * camera.zoom;
+            const width = throne.width * camera.zoom;
+            const height = throne.height * camera.zoom;
+
+            ctx.strokeStyle = "yellow";
+            ctx.lineWidth = 3;
+            ctx.strokeRect(x, y, width, height);
+            ctx.fillStyle = "white";
+            ctx.font = "14px Arial";
+            ctx.fillText("THRONE", x, y - 8);
+        }
+    }
+}
+
 
 // ============================================================
 // SPAWN DRAWING
@@ -3506,6 +3814,8 @@ function draw() {
 
     drawEditorDoors();
 
+    drawEditorThrones();
+
     drawSpawn();
 
 }
@@ -3560,8 +3870,26 @@ function createLevelData() {
 
                     level:
                         door.level ||
-                        "./level-2.json"
+                        "./level-2.json",
 
+                    destination:
+                        door.destination
+                            ? {
+                                x: door.destination.x,
+                                y: door.destination.y
+                            }
+                            : undefined
+
+                })
+            ),
+
+        thrones:
+            thrones.map(
+                throne => ({
+                    x: throne.x,
+                    y: throne.y,
+                    width: throne.width,
+                    height: throne.height
                 })
             ),
 
@@ -4016,6 +4344,13 @@ async function loadLevel() {
 
     }
 
+    thrones =
+        Array.isArray(level.thrones)
+            ? level.thrones
+            : level.throne
+                ? [level.throne]
+                : [];
+
 
     level.background =
         level.background ||
@@ -4113,6 +4448,13 @@ function loadLevelData(
         doors = [];
 
     }
+
+    thrones =
+        Array.isArray(level.thrones)
+            ? level.thrones
+            : level.throne
+                ? [level.throne]
+                : [];
 
 
     level.background =

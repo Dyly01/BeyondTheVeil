@@ -3,7 +3,8 @@ const BACKGROUNDS = {
     darkForest: "Dark Forest at Night",
     forestPond: "Forest with Pond",
     forestLake: "Lake near Forest",
-    mountainForest: "Mountain through Forest"
+    mountainForest: "Mountain through Forest",
+    castle: "Castle",
 };
 
 const PLATFORM_STYLES = {
@@ -149,21 +150,12 @@ function drawBackground(
 
     }
 
-
-    drawTreeLine(
-        ctx,
-        width,
-        height,
-        cameraX,
-        night
-    );
-
-    drawGroundMist(
-        ctx,
-        width,
-        height,
-        night
-    );
+    if (scene === "castle") {
+        drawCastleBackground(ctx, width, height, cameraX);
+    } else {
+        drawTreeLine(ctx, width, height, cameraX, night);
+        drawGroundMist(ctx, width, height, night);
+    }
 }
 
 
@@ -774,6 +766,36 @@ function drawDoor(
     ctx.fill();
 }
 
+function drawThrone(ctx, throne) {
+    if (!throne) return;
+
+    const x = throne.x;
+    const y = throne.y;
+    const width = throne.width;
+    const height = throne.height;
+
+    ctx.fillStyle = "#16131c";
+    ctx.fillRect(x + width * 0.2, y, width * 0.6, height);
+
+    ctx.fillStyle = "#b89545";
+    ctx.fillRect(x + width * 0.08, y + height * 0.25, width * 0.18, height * 0.58);
+    ctx.fillRect(x + width * 0.74, y + height * 0.25, width * 0.18, height * 0.58);
+
+    ctx.fillStyle = "#7d2633";
+    ctx.fillRect(x + width * 0.3, y + height * 0.24, width * 0.4, height * 0.48);
+    ctx.fillRect(x + width * 0.26, y + height * 0.62, width * 0.48, height * 0.18);
+
+    ctx.fillStyle = "#d1ae55";
+    ctx.fillRect(x + width * 0.15, y + height * 0.8, width * 0.7, height * 0.08);
+
+    ctx.beginPath();
+    ctx.moveTo(x + width * 0.2, y);
+    ctx.lineTo(x + width * 0.5, y - height * 0.14);
+    ctx.lineTo(x + width * 0.8, y);
+    ctx.closePath();
+    ctx.fillStyle = "#a98338";
+    ctx.fill();
+}
 
 function drawPlatform(
     ctx,
@@ -940,6 +962,103 @@ function platformHighlight(
         : "#d9e5df";
 }
 
+function drawCastleBackground(ctx, width, height, cameraX) {
+    const wallGradient = ctx.createLinearGradient(0, 0, 0, height);
+
+    wallGradient.addColorStop(0, "#171923");
+    wallGradient.addColorStop(0.65, "#302f3a");
+    wallGradient.addColorStop(1, "#15151d");
+
+    ctx.fillStyle = wallGradient;
+    ctx.fillRect(0, 0, width, height);
+
+    const parallax = -(cameraX * 0.12);
+    const wallTop = height * 0.12;
+    const wallBottom = height * 0.78;
+
+    ctx.fillStyle = "#3b3945";
+    ctx.fillRect(0, wallTop, width, wallBottom - wallTop);
+
+    ctx.strokeStyle = "rgba(14, 14, 20, 0.42)";
+    ctx.lineWidth = 3;
+
+    for (let row = wallTop + 42; row < wallBottom; row += 42) {
+        ctx.beginPath();
+        ctx.moveTo(0, row);
+        ctx.lineTo(width, row);
+        ctx.stroke();
+
+        const offset = ((row / 42) % 2) * 55 + parallax;
+
+        for (let column = offset; column < width; column += 110) {
+            ctx.beginPath();
+            ctx.moveTo(column, row - 42);
+            ctx.lineTo(column, row);
+            ctx.stroke();
+        }
+    }
+
+    ctx.fillStyle = "#24232d";
+    ctx.fillRect(0, wallBottom, width, height - wallBottom);
+
+    ctx.fillStyle = "#64606a";
+    ctx.fillRect(0, wallBottom - 12, width, 12);
+
+    for (let column = 90 + parallax; column < width; column += 360) {
+        drawInteriorPillar(ctx, column, wallTop + 10, wallBottom - wallTop - 10);
+    }
+
+    for (let torchX = 120 + parallax; torchX < width + 180; torchX += 360) {
+        drawTorch(ctx, torchX, height * 0.44);
+    }
+}
+
+function drawInteriorPillar(ctx, x, y, height) {
+    ctx.fillStyle = "#24242e";
+    ctx.fillRect(x, y, 54, height);
+
+    ctx.fillStyle = "#57525c";
+    ctx.fillRect(x - 10, y, 74, 18);
+    ctx.fillRect(x - 10, y + height - 18, 74, 18);
+
+    ctx.fillStyle = "rgba(133, 126, 131, 0.25)";
+    ctx.fillRect(x + 8, y + 18, 8, height - 36);
+}
+
+function drawTorch(ctx, x, y) {
+    const light = ctx.createRadialGradient(x, y, 2, x, y, 150);
+
+    light.addColorStop(0, "rgba(255, 220, 112, 0.42)");
+    light.addColorStop(0.45, "rgba(255, 143, 48, 0.16)");
+    light.addColorStop(1, "rgba(255, 113, 26, 0)");
+
+    ctx.fillStyle = light;
+    ctx.beginPath();
+    ctx.arc(x, y, 150, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = "#8b5a35";
+    ctx.fillRect(x - 5, y + 10, 10, 42);
+
+    ctx.fillStyle = "#d5b15b";
+    ctx.fillRect(x - 13, y + 7, 26, 8);
+
+    ctx.fillStyle = "#ffb52f";
+    ctx.beginPath();
+    ctx.moveTo(x, y - 26);
+    ctx.lineTo(x - 13, y + 7);
+    ctx.lineTo(x + 13, y + 7);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.fillStyle = "#fff0a1";
+    ctx.beginPath();
+    ctx.moveTo(x, y - 15);
+    ctx.lineTo(x - 5, y + 5);
+    ctx.lineTo(x + 5, y + 5);
+    ctx.closePath();
+    ctx.fill();
+}
 
 export {
     BACKGROUNDS,
@@ -948,6 +1067,6 @@ export {
     drawPlatform,
     drawDoor,
     drawGem,
-    drawCrown,
-    drawKey
+    drawKey,
+    drawThrone
 };

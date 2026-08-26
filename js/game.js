@@ -17,7 +17,8 @@ import {
 } from "./level.js";
 
 import {
-    updateInput
+    updateInput,
+    isKeyPressed
 } from "./input.js";
 
 import {
@@ -34,8 +35,8 @@ import {
     drawPlatform,
     drawDoor,
     drawGem,
-    drawCrown,
-    drawKey
+    drawKey,
+    drawThrone
 } from "./graphics.js";
 
 import {
@@ -66,8 +67,6 @@ const ctx =
 // ============================================================
 
 const collectibles = {
-
-    crown: false,
 
     gem: false,
 
@@ -106,6 +105,8 @@ resizeCanvas();
 
 let changingLevel = false;
 
+let gameWon = false;
+
 
 // ============================================================
 // COLLECTIBLES
@@ -125,28 +126,6 @@ function checkCollectibles() {
 
     const current =
         level.collectibles;
-
-
-    if (
-        current.crown &&
-        !current.crown.collected &&
-        isColliding(
-            player,
-            current.crown
-        )
-    ) {
-
-        current.crown.collected =
-            true;
-
-        collectibles.crown =
-            true;
-
-        console.log(
-            "Crown collected!"
-        );
-
-    }
 
 
     if (
@@ -254,9 +233,6 @@ async function resetGame() {
     );
 
 
-    collectibles.crown =
-        false;
-
     collectibles.gem =
         false;
 
@@ -351,10 +327,7 @@ async function checkDoors() {
         const door of level.doors
     ) {
 
-        if (
-            !door ||
-            !door.level
-        ) {
+        if (!door || (!door.level && !door.destination)) {
 
             continue;
 
@@ -400,6 +373,15 @@ async function enterDoor(
 
     changingLevel =
         true;
+
+    if (door.destination) {
+        player.x = door.destination.x;
+        player.y = door.destination.y;
+        player.velocityX = 0;
+        player.velocityY = 0;
+        changingLevel = false;
+        return;
+    }
 
 
     const targetLevel =
@@ -449,6 +431,38 @@ async function enterDoor(
 
 }
 
+function checkThrones() {
+    if (!level || gameWon || !isKeyPressed("e")) {
+        return;
+    }
+
+    const thrones = Array.isArray(level.thrones)
+        ? level.thrones
+        : level.throne
+            ? [level.throne]
+            : [];
+
+    for (const throne of thrones) {
+        if (!throne) {
+            continue;
+        }
+
+        const interactionZone = {
+            x: throne.x - 60,
+            y: throne.y - 60,
+            width: throne.width + 120,
+            height: throne.height + 120
+        };
+
+        if (isColliding(player, interactionZone)) {
+            gameWon = true;
+            player.velocityX = 0;
+            player.velocityY = 0;
+            return;
+        }
+    }
+}
+
 
 // ============================================================
 // UPDATE
@@ -458,9 +472,16 @@ function update(
     deltaTime
 ) {
 
-    if (
-        isGameOver()
-    ) {
+    if (gameWon) {
+        updateInput();
+        return;
+    }
+
+    // --------------------------------------------------------
+    // Game Over
+    // --------------------------------------------------------
+
+    if (isGameOver()) {
 
         updateInput();
 
@@ -502,6 +523,8 @@ function update(
 
 
     checkDoors();
+
+    checkThrones();
 
 
     updateCamera(
@@ -601,6 +624,16 @@ function draw() {
 
     }
 
+    const thrones = Array.isArray(level.thrones)
+        ? level.thrones
+        : level.throne
+            ? [level.throne]
+            : [];
+
+    for (const throne of thrones) {
+        drawThrone(ctx, throne);
+    }
+
 
     if (
         level.collectibles
@@ -614,19 +647,6 @@ function draw() {
             drawGem(
                 ctx,
                 level.collectibles.gem
-            );
-
-        }
-
-
-        if (
-            level.collectibles.crown &&
-            !level.collectibles.crown.collected
-        ) {
-
-            drawCrown(
-                ctx,
-                level.collectibles.crown
             );
 
         }
@@ -648,7 +668,8 @@ function draw() {
 
 
     if (
-        !isGameOver()
+        !isGameOver() &&
+        !gameWon
     ) {
 
         drawPlayer(
@@ -670,6 +691,27 @@ function draw() {
         ctx,
         canvas
     );
+
+    if (gameWon) {
+        ctx.fillStyle = "rgba(5, 7, 12, 0.78)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#f0d477";
+        ctx.textAlign = "center";
+        ctx.font = "bold 48px Georgia";
+        ctx.fillText(
+            "THE VEIL HAS FALLEN",
+            canvas.width / 2,
+            canvas.height / 2 - 20
+        );
+        ctx.fillStyle = "white";
+        ctx.font = "22px Georgia";
+        ctx.fillText(
+            "The throne has accepted you.",
+            canvas.width / 2,
+            canvas.height / 2 + 28
+        );
+        ctx.textAlign = "start";
+    }
 
 }
 

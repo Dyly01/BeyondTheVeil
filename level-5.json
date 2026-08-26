@@ -1,65 +1,156 @@
 {
-    "name": "Test Level",
-    "width": 3000,
+    "name": "The Castle Interior",
+    "width": 4200,
     "height": 1200,
     "spawn": {
-        "x": 500,
-        "y": 25
+        "x": 160,
+        "y": 640
     },
+    "background": "castle",
+    "doors": [
+        {
+            "x": 3550,
+            "y": 625,
+            "width": 60,
+            "height": 100,
+            "level": "./level-5.json",
+            "destination": {
+                "x": 3450,
+                "y": 0
+            }
+        },
+        {
+            "x": 2525,
+            "y": 425,
+            "width": 60,
+            "height": 100,
+            "level": "./level-5.json",
+            "destination": {
+                "x": 2400,
+                "y": 0
+            }
+        }
+    ],
+    "thrones": [
+        {
+            "x": 3975,
+            "y": 500,
+            "width": 180,
+            "height": 220
+        }
+    ],
     "platforms": [
         {
+            "x": 950,
+            "y": 430,
+            "width": 240,
+            "height": 30,
+            "style": "stone",
+            "color": "#737d81"
+        },
+        {
+            "x": 2450,
+            "y": 540,
+            "width": 275,
+            "height": 35,
+            "style": "stone",
+            "color": "#737d81"
+        },
+        {
+            "x": 3450,
+            "y": 725,
+            "width": 725,
+            "height": 40,
+            "style": "stone",
+            "color": "#737d81"
+        },
+        {
             "x": 0,
+            "y": 750,
+            "width": 300,
+            "height": 25,
+            "style": "stone",
+            "color": "#737d81"
+        },
+        {
+            "x": 1525,
+            "y": 675,
+            "width": 250,
+            "height": 25,
+            "style": "stone",
+            "color": "#737d81"
+        },
+        {
+            "x": 2300,
+            "y": 325,
+            "width": 350,
+            "height": 25,
+            "style": "stone",
+            "color": "#737d81"
+        },
+        {
+            "x": 3150,
             "y": 100,
-            "width": 900,
-            "height": 50
+            "width": 250,
+            "height": 675,
+            "style": "stone",
+            "color": "#737d81"
         },
         {
-            "x": 200,
-            "y": 500,
-            "width": 200,
-            "height": 30
-        },
-        {
-            "x": 100,
+            "x": 2125,
             "y": 350,
-            "width": 500,
-            "height": 30
+            "width": 200,
+            "height": 325,
+            "style": "stone",
+            "color": "#737d81"
         },
         {
-            "x": 450,
-            "y": 330,
-            "width": 150,
-            "height": 30
+            "x": 2850,
+            "y": 175,
+            "width": 225,
+            "height": 25,
+            "style": "stone",
+            "color": "#737d81"
+        },
+        {
+            "x": 2650,
+            "y": 325,
+            "width": 75,
+            "height": 225,
+            "style": "stone",
+            "color": "#737d81"
+        },
+        {
+            "x": 2350,
+            "y": 725,
+            "width": 425,
+            "height": 25,
+            "style": "stone",
+            "color": "#737d81"
         },
         {
             "x": 400,
-            "y": 250,
+            "y": 675,
             "width": 225,
-            "height": 175
+            "height": 25,
+            "style": "stone",
+            "color": "#737d81"
         },
         {
-            "x": 825,
-            "y": 525,
-            "width": 225,
-            "height": 100
-        },
-        {
-            "x": 1225,
-            "y": 325,
-            "width": 50,
-            "height": 100
-        },
-        {
-            "x": 1125,
-            "y": 200,
-            "width": 50,
-            "height": 25
-        },
-        {
-            "x": 225,
+            "x": 1425,
             "y": 225,
-            "width": 200,
-            "height": 75
+            "width": 500,
+            "height": 100,
+            "style": "stone",
+            "color": "#737d81"
+        },
+        {
+            "x": 700,
+            "y": 600,
+            "width": 150,
+            "height": 25,
+            "style": "stone",
+            "color": "#737d81"
         }
     ]
 }
