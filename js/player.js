@@ -13,13 +13,23 @@ import {
     level
 } from "./level.js";
 
+const sprites = {
+    idle: new Image(),
+    run: new Image(),
+    jump: new Image()
+};
+
+sprites.idle.src = "./images/player/Idle.png";
+sprites.run.src = "./images/player/Run.png";
+sprites.jump.src = "./images/player/Jump.png";
+
 
 const player = {
 
     x: 0,
     y: 0,
 
-    width: 40,
+    width: 20,
     height: 60,
 
 
@@ -37,7 +47,25 @@ const player = {
 
 
     canDoubleJump: false,
-    doubleJumpUsed: false
+    doubleJumpUsed: false,
+
+    animation: "idle",
+    animationFrame: 0,
+    animationTimer: 0,
+
+    animationSpeed: {
+        idle: 8,
+        run: 10,
+        jump: 12
+    },
+
+    spriteWidth: 80,
+    spriteHeight: 100,
+
+    spriteOffsetX: -30,
+    spriteOffsetY: -40,
+
+    facingRight: true,
 
 };
 
@@ -64,6 +92,59 @@ function spawnPlayer(level) {
 
 }
 
+function updateAnimation(deltaTime) {
+
+    let newAnimation;
+
+    if (!player.grounded) {
+        newAnimation = "jump";
+    }
+    else if (Math.abs(player.velocityX) > 10) {
+        newAnimation = "run";
+    }
+    else {
+        newAnimation = "idle";
+    }
+
+    if (newAnimation !== player.animation) {
+
+        player.animation = newAnimation;
+        player.animationFrame = 0;
+        player.animationTimer = 0;
+
+    }
+
+    player.animationTimer += deltaTime;
+
+    const frameDuration =
+        1 / player.animationSpeed[player.animation];
+
+    if (player.animationTimer >= frameDuration) {
+
+        player.animationTimer -= frameDuration;
+
+        const frameCount = {
+            idle: 6,
+            run: 8,
+            jump: 12
+        }[player.animation];
+
+        if (
+            player.animation === "jump" &&
+            player.animationFrame >= frameCount - 1
+        ) {
+            player.animationFrame = frameCount - 1;
+        }
+        else {
+            player.animationFrame++;
+
+            if (player.animationFrame >= frameCount) {
+                player.animationFrame = 0;
+            }
+        }
+    }
+}
+
 
 function updatePlayer(
     deltaTime
@@ -86,7 +167,7 @@ function updatePlayer(
         player.velocityX -=
             player.acceleration *
             deltaTime;
-
+        player.facingRight = false;
     }
 
 
@@ -98,6 +179,7 @@ function updatePlayer(
         player.velocityX +=
             player.acceleration *
             deltaTime;
+        player.facingRight = true;
 
     }
 
@@ -158,6 +240,9 @@ function updatePlayer(
         player.doubleJumpUsed =
             true;
 
+        player.animationFrame = 0;
+        player.animationTimer = 0;
+
     }
 
 
@@ -203,23 +288,75 @@ function updatePlayer(
 
     }
 
+    updateAnimation(deltaTime);
+
 }
 
+function drawPlayer(ctx) {
 
-function drawPlayer(
-    ctx
-) {
+    const sprite =
+        sprites[player.animation];
 
-    ctx.fillStyle =
-        "white";
+    if (!sprite.complete) {
+        return;
+    }
 
-    ctx.fillRect(
-        player.x,
-        player.y,
-        player.width,
-        player.height
-    );
+    const sourceX =
+        player.animationFrame * 128;
 
+    const drawX =
+        player.x + player.spriteOffsetX;
+
+    const drawY =
+        player.y + player.spriteOffsetY;
+
+
+    ctx.save();
+
+    if (player.facingRight) {
+
+        ctx.drawImage(
+            sprite,
+            sourceX,
+            0,
+            128,
+            128,
+
+            drawX,
+            drawY,
+            player.spriteWidth,
+            player.spriteHeight
+        );
+
+    }
+    else {
+
+        ctx.translate(
+            drawX + player.spriteWidth,
+            drawY
+        );
+
+        ctx.scale(
+            -1,
+            1
+        );
+
+        ctx.drawImage(
+            sprite,
+            sourceX,
+            0,
+            128,
+            128,
+
+            0,
+            0,
+            player.spriteWidth,
+            player.spriteHeight
+        );
+
+    }
+
+    ctx.restore();
 }
 
 
