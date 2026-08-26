@@ -270,3 +270,87 @@ canvas {
 .settingToggle {
     color: white;
 }
+
+#introScreen {
+
+    position: fixed;
+
+    inset: 0;
+
+    display: none;
+
+    align-items: center;
+    justify-content: center;
+
+    background: rgba(0, 0, 0, 0.8);
+
+    z-index: 5000;
+
+}
+
+
+#introContent {
+
+    width: min(650px, 80vw);
+
+    padding: 45px;
+
+    background: rgba(20, 20, 25, 0.97);
+
+    border: 2px solid rgba(255, 255, 255, 0.2);
+
+    border-radius: 16px;
+
+    color: white;
+
+    text-align: center;
+
+    box-shadow:
+        0 10px 40px rgba(0, 0, 0, 0.6);
+
+}
+
+
+#introContent h1 {
+
+    margin: 0 0 30px 0;
+
+    font-size: 48px;
+
+}
+
+
+#introContent h2 {
+
+    margin-top: 25px;
+
+    font-size: 26px;
+
+}
+
+
+#introContent p {
+
+    font-size: 18px;
+
+    line-height: 1.5;
+
+}
+
+
+.introControls {
+
+    margin-top: 20px;
+
+}
+
+
+.infoContinue {
+
+    margin-top: 35px;
+
+    font-size: 20px !important;
+
+    opacity: 0.75;
+
+}

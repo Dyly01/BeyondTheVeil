@@ -6,7 +6,9 @@ const gameState = {
 
     crownCollected: false,
 
-    currentSpawn: null
+    currentSpawn: null,
+
+    doubleJumpInfoShown: false
 
 };
 
@@ -21,6 +23,8 @@ function resetGameState() {
 
     gameState.currentSpawn = null;
 
+    gameState.doubleJumpInfoShown = false;
+
 }
 
 
@@ -28,3 +32,4 @@ export {
     gameState,
     resetGameState
 };
+

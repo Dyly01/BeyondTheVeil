@@ -70,6 +70,8 @@ let crownMissingTimer = 0;
 
 let gameTime = 0;
 
+let introOpen = false;
+
 
 const canvas =
     document.getElementById(
@@ -540,10 +542,98 @@ function checkGoal() {
 
 }
 
+function showIntroScreen() {
+
+    if (
+        !shouldShowInfoScreens()
+    ) {
+
+        return;
+
+    }
+
+
+    const introScreen =
+        document.getElementById(
+            "introScreen"
+        );
+
+
+    if (!introScreen) {
+
+        return;
+
+    }
+
+
+    introOpen = true;
+
+    introScreen.style.display =
+        "flex";
+
+}
+
+document.addEventListener(
+    "keydown",
+    (event) => {
+
+        if (
+            !introOpen
+        ) {
+
+            return;
+
+        }
+
+
+        if (
+            event.key === "Enter"
+        ) {
+
+            event.preventDefault();
+
+            closeIntroScreen();
+
+        }
+
+    }
+);
+
+
+function closeIntroScreen() {
+
+    const introScreen =
+        document.getElementById(
+            "introScreen"
+        );
+
+
+    if (!introScreen) {
+
+        return;
+
+    }
+
+
+    introOpen = false;
+
+    introScreen.style.display =
+        "none";
+
+}
+
 
 function update(
     deltaTime
 ) {
+
+    if (introOpen) {
+
+        updateInput();
+
+        return;
+
+    }
 
     if (
         isGameOver()
@@ -1235,6 +1325,8 @@ async function startGame() {
 
     }
 
+    showIntroScreen();
+
 
     requestAnimationFrame(
         gameLoop
@@ -1244,3 +1336,8 @@ async function startGame() {
 
 
 startGame();
+
+export {
+    gameState,
+    resetGameState
+};
