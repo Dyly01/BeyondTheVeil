@@ -841,35 +841,58 @@ function drawLock(ctx, door) {
     ctx.restore();
 }
 
+
+
 function drawThrone(ctx, throne) {
-    if (!throne) return;
 
-    const x = throne.x;
-    const y = throne.y;
-    const width = throne.width;
-    const height = throne.height;
+    if (!throne) {
+        return;
+    }
 
-    ctx.fillStyle = "#16131c";
-    ctx.fillRect(x + width * 0.2, y, width * 0.6, height);
+    ctx.save();
 
-    ctx.fillStyle = "#b89545";
-    ctx.fillRect(x + width * 0.08, y + height * 0.25, width * 0.18, height * 0.58);
-    ctx.fillRect(x + width * 0.74, y + height * 0.25, width * 0.18, height * 0.58);
+    ctx.fillStyle = "#5a3b2e";
 
-    ctx.fillStyle = "#7d2633";
-    ctx.fillRect(x + width * 0.3, y + height * 0.24, width * 0.4, height * 0.48);
-    ctx.fillRect(x + width * 0.26, y + height * 0.62, width * 0.48, height * 0.18);
+    ctx.fillRect(
+        throne.x + throne.width * 0.2,
+        throne.y + throne.height * 0.35,
+        throne.width * 0.6,
+        throne.height * 0.65
+    );
 
-    ctx.fillStyle = "#d1ae55";
-    ctx.fillRect(x + width * 0.15, y + height * 0.8, width * 0.7, height * 0.08);
+    ctx.fillStyle = "#704936";
 
-    ctx.beginPath();
-    ctx.moveTo(x + width * 0.2, y);
-    ctx.lineTo(x + width * 0.5, y - height * 0.14);
-    ctx.lineTo(x + width * 0.8, y);
-    ctx.closePath();
-    ctx.fillStyle = "#a98338";
-    ctx.fill();
+    ctx.fillRect(
+        throne.x + throne.width * 0.1,
+        throne.y,
+        throne.width * 0.8,
+        throne.height * 0.45
+    );
+
+    ctx.fillStyle = "#d4af37";
+
+    ctx.fillRect(
+        throne.x + throne.width * 0.1,
+        throne.y,
+        throne.width * 0.8,
+        8
+    );
+
+    ctx.fillRect(
+        throne.x + throne.width * 0.1,
+        throne.y,
+        8,
+        throne.height * 0.45
+    );
+
+    ctx.fillRect(
+        throne.x + throne.width * 0.82,
+        throne.y,
+        8,
+        throne.height * 0.45
+    );
+
+    ctx.restore();
 }
 
 function drawPlatform(

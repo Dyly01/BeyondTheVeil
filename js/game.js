@@ -42,7 +42,8 @@ import {
     drawDoor,
     drawGem,
     drawCrown,
-    drawKey
+    drawKey,
+    drawThrone
 } from "./graphics.js";
 
 
@@ -59,6 +60,11 @@ import {
     gameState,
     resetGameState
 } from "./gameState.js";
+
+let gameWon = false;
+let crownMissingTimer = 0;
+
+let gameTime = 0;
 
 
 const canvas =
@@ -91,6 +97,24 @@ window.addEventListener(
 
 
 resizeCanvas();
+
+document.addEventListener(
+    "keydown",
+    (event) => {
+
+        if (
+            event.key === "Enter" &&
+            gameWon
+        ) {
+
+            event.preventDefault();
+
+            resetGame();
+
+        }
+
+    }
+);
 
 
 let changingLevel =
@@ -472,6 +496,46 @@ async function checkDoors() {
 
 }
 
+function checkGoal() {
+
+    if (
+        !level ||
+        !level.goal ||
+        gameWon
+    ) {
+
+        return;
+
+    }
+
+
+    if (
+        !isColliding(
+            player,
+            level.goal
+        )
+    ) {
+
+        return;
+
+    }
+
+
+    if (
+        gameState.crownCollected
+    ) {
+
+        gameWon = true;
+
+        return;
+
+    }
+
+
+    crownMissingTimer = 2;
+
+}
+
 
 function update(
     deltaTime
@@ -479,6 +543,16 @@ function update(
 
     if (
         isGameOver()
+    ) {
+
+        updateInput();
+
+        return;
+
+    }
+
+    if (
+        gameWon
     ) {
 
         updateInput();
@@ -498,6 +572,14 @@ function update(
 
     }
 
+    if (
+        crownMissingTimer > 0
+    ) {
+
+        crownMissingTimer -=
+            deltaTime;
+
+    }
 
     if (
         !level ||
@@ -508,6 +590,18 @@ function update(
 
     }
 
+    if (
+        gameWon
+    ) {
+
+        updateInput();
+
+        return;
+
+    }
+
+    gameTime += deltaTime;
+
 
     updatePlayer(
         deltaTime
@@ -515,6 +609,8 @@ function update(
 
 
     checkCollectibles();
+
+    checkGoal();
 
 
     updateLives();
@@ -530,6 +626,146 @@ function update(
 
 
     updateInput();
+
+}
+
+function formatGameTime(seconds) {
+
+    const minutes =
+        Math.floor(
+            seconds / 60
+        );
+
+    const remainingSeconds =
+        seconds % 60;
+
+    return (
+        String(minutes).padStart(2, "0") +
+        ":" +
+        remainingSeconds
+            .toFixed(2)
+            .padStart(5, "0")
+    );
+
+}
+
+function drawGoalUI() {
+
+    if (
+        crownMissingTimer <= 0 &&
+        !gameWon
+    ) {
+
+        return;
+
+    }
+
+
+    ctx.save();
+
+
+    if (
+        gameWon
+    ) {
+
+        ctx.fillStyle =
+            "rgba(0, 0, 0, 0.75)";
+
+        ctx.fillRect(
+            0,
+            0,
+            canvas.width,
+            canvas.height
+        );
+
+
+        ctx.fillStyle =
+            "white";
+
+        ctx.font =
+            "bold 72px Arial";
+
+        ctx.textAlign =
+            "center";
+
+        ctx.textBaseline =
+            "middle";
+
+
+        ctx.fillText(
+            "YOU WIN!",
+            canvas.width / 2,
+            canvas.height / 2 - 70
+        );
+
+
+        ctx.font =
+            "32px Arial";
+
+        ctx.fillText(
+            `Time: ${formatGameTime(gameTime)}`,
+            canvas.width / 2,
+            canvas.height / 2
+        );
+
+
+        ctx.font =
+            "24px Arial";
+
+        ctx.fillText(
+            "Press ENTER to restart",
+            canvas.width / 2,
+            canvas.height / 2 + 60
+        );
+
+    }
+    else {
+
+        ctx.fillStyle =
+            "rgba(0, 0, 0, 0.75)";
+
+        const width = 300;
+        const height = 90;
+
+        const x =
+            canvas.width / 2 -
+            width / 2;
+
+        const y =
+            40;
+
+
+        ctx.fillRect(
+            x,
+            y,
+            width,
+            height
+        );
+
+
+        ctx.fillStyle =
+            "white";
+
+        ctx.font =
+            "bold 26px Arial";
+
+        ctx.textAlign =
+            "center";
+
+        ctx.textBaseline =
+            "middle";
+
+
+        ctx.fillText(
+            "Crown Missing",
+            canvas.width / 2,
+            y + height / 2
+        );
+
+    }
+
+
+    ctx.restore();
 
 }
 
@@ -621,9 +857,32 @@ function draw() {
                 locked
             );
 
+            if (
+                Array.isArray(level.thrones)
+            ) {
+
+                for (
+                    const throne of level.thrones
+                ) {
+
+                    if (!throne) {
+                        continue;
+                    }
+
+                    drawThrone(
+                        ctx,
+                        throne
+                    );
+
+                }
+
+            }
+
         }
 
     }
+
+    
 
 
     if (
@@ -694,6 +953,8 @@ function draw() {
         ctx,
         canvas
     );
+
+    drawGoalUI();
 
 }
 
@@ -783,6 +1044,10 @@ async function resetGame() {
 
 
     resetGameState();
+
+    gameWon = false;
+    crownMissingTimer = 0;
+    gameTime = 0;
 
 
     resetLives();
