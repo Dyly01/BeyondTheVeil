@@ -3,6 +3,10 @@ import {
     setResetCallback
 } from "./pause.js";
 
+import {
+    shouldShowInfoScreens
+} from "./settings.js";
+
 
 import {
     player,
@@ -769,6 +773,78 @@ function drawGoalUI() {
 
 }
 
+function drawCollectibleHUD() {
+
+    const iconSize = 32;
+    const gap = 12;
+    const padding = 16;
+
+    const icons = [];
+
+    if (gameState.doubleJumpUnlocked) {
+        icons.push("gem");
+    }
+
+    if (gameState.crownCollected) {
+        icons.push("crown");
+    }
+
+    if (gameState.keyCollected) {
+        icons.push("key");
+    }
+
+    if (icons.length === 0) {
+        return;
+    }
+
+    ctx.save();
+
+    const startX = padding;
+    const y =
+        canvas.height -
+        iconSize -
+        padding;
+
+    icons.forEach(
+        (type, index) => {
+
+            const x =
+                startX +
+                index *
+                (iconSize + gap);
+
+            const item = {
+                x,
+                y,
+                width: iconSize,
+                height: iconSize
+            };
+
+            if (type === "gem") {
+                drawGem(
+                    ctx,
+                    item
+                );
+            }
+
+            else if (type === "crown") {
+                drawCrown(
+                    ctx,
+                    item
+                );
+            }
+
+            else if (type === "key") {
+                drawKey(
+                    ctx,
+                    item
+                );
+            }
+        }
+    );
+
+    ctx.restore();
+}
 
 function draw() {
 
@@ -951,8 +1027,10 @@ function draw() {
 
     drawGameOver(
         ctx,
-        canvas
+        canvas  
     );
+
+    drawCollectibleHUD();
 
     drawGoalUI();
 

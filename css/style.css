@@ -262,3 +262,11 @@ canvas {
 
     cursor: pointer;
 }
+
+#showInfoScreens {
+    accent-color: white;
+}
+
+.settingToggle {
+    color: white;
+}
