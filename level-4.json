@@ -12,7 +12,7 @@
             "y": 25,
             "width": 40,
             "height": 60,
-            "from": "./level-3.json"
+            "from": "./level-1.json"
         },
         {
             "x": 1525,
@@ -36,7 +36,7 @@
             "y": 0,
             "width": 60,
             "height": 100,
-            "level": "./level-3.json"
+            "level": "./level-1.json"
         }
     ],
     "thrones": [],

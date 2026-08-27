@@ -60,7 +60,8 @@
             "y": 725,
             "width": 60,
             "height": 100,
-            "level": "./level-4.json"
+            "level": "./level-4.json",
+            "requiresKey": true
         }
     ],
     "thrones": [],
