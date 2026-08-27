@@ -50,16 +50,16 @@
             "color": "#aa7942"
         },
         {
-            "x": 200,
-            "y": 250,
-            "width": 200,
-            "height": 30,
+            "x": 150,
+            "y": 175,
+            "width": 300,
+            "height": 25,
             "style": "stone",
             "color": "#00a3d7"
         },
         {
-            "x": 750,
-            "y": 280,
+            "x": 1025,
+            "y": 480,
             "width": 150,
             "height": 30,
             "style": "wood",
@@ -74,18 +74,18 @@
             "color": "#737d81"
         },
         {
-            "x": 1250,
+            "x": 875,
             "y": 675,
-            "width": 125,
+            "width": 475,
             "height": 25,
             "style": "moss",
             "color": "#808080"
         },
         {
-            "x": 1075,
-            "y": 550,
-            "width": 100,
-            "height": 25,
+            "x": 475,
+            "y": 500,
+            "width": 400,
+            "height": 125,
             "style": "neon",
             "color": "#d357fe"
         },
@@ -147,19 +147,75 @@
         },
         {
             "x": 950,
-            "y": 425,
+            "y": 275,
+            "width": 225,
+            "height": 25,
+            "style": "moss",
+            "color": "#4f5503"
+        },
+        {
+            "x": 800,
+            "y": 950,
+            "width": 175,
+            "height": 25,
+            "style": "moss",
+            "color": "#808080"
+        },
+        {
+            "x": 125,
+            "y": 675,
+            "width": 300,
+            "height": 50,
+            "style": "moss",
+            "color": "#4f5503"
+        },
+        {
+            "x": 450,
+            "y": 950,
+            "width": 175,
+            "height": 25,
+            "style": "neon",
+            "color": "#d357fe"
+        },
+        {
+            "x": 1125,
+            "y": 950,
+            "width": 75,
+            "height": 25,
+            "style": "moss",
+            "color": "#808080"
+        },
+        {
+            "x": 475,
+            "y": 225,
+            "width": 425,
+            "height": 100,
+            "style": "stone",
+            "color": "#00a3d7"
+        },
+        {
+            "x": 75,
+            "y": 400,
+            "width": 275,
+            "height": 75,
+            "style": "stone",
+            "color": "#00a3d7"
+        },
+        {
+            "x": 25,
+            "y": 950,
             "width": 125,
             "height": 25,
             "style": "moss",
             "color": "#4f5503"
         },
         {
-            "x": 1125,
-            "y": 825,
-            "width": 75,
+            "x": 1300,
+            "y": 350,
+            "width": 175,
             "height": 25,
             "style": "moss",
-            "color": "#808080"
+            "color": "#4f5503"
         }
     ]
 }
