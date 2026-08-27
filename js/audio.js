@@ -32,13 +32,35 @@ const levelMusicPaths = {
     "./level-5.json": "./audio/music-level-5.mp3"
 };
 
-const music =
-    new Audio();
+const levelMusic =
+    Object.fromEntries(
+        Object.entries(levelMusicPaths).map(
+            ([levelFile, musicPath]) => {
+
+                const track =
+                    new Audio(musicPath);
+
+                track.loop =
+                    true;
+
+                track.preload =
+                    "auto";
+
+                return [
+                    levelFile,
+                    track
+                ];
+
+            }
+        )
+    );
+
+let music =
+    levelMusic["./level-1.json"];
 
 const endingSound =
     new Audio("./audio/ending.mp3");
 
-music.loop = true;
 endingSound.loop = false;
 endingSound.preload = "auto";
 
@@ -69,6 +91,15 @@ let soundVolume =
 music.volume =
     musicVolume;
 
+for (
+    const track of Object.values(levelMusic)
+) {
+
+    track.volume =
+        musicVolume;
+
+}
+
 endingSound.volume =
     musicVolume;
 
@@ -89,24 +120,14 @@ collectSound.volume =
 
 function playLevelMusic(levelFile) {
 
-    const musicPath =
-        levelMusicPaths[levelFile] ||
-        levelMusicPaths["./level-1.json"];
+    const nextMusic =
+        levelMusic[levelFile] ||
+        levelMusic["./level-1.json"];
 
-    if (
-        music.src.endsWith(
-            musicPath
-        )
-    ) {
+    music.pause();
 
-        startMusic();
-
-        return;
-
-    }
-
-    music.src =
-        musicPath;
+    music =
+        nextMusic;
 
     music.currentTime =
         0;
@@ -169,8 +190,14 @@ function setMusicVolume(
             )
         );
 
-    music.volume =
-        musicVolume;
+    for (
+        const track of Object.values(levelMusic)
+    ) {
+
+        track.volume =
+            musicVolume;
+
+    }
 
 
     localStorage.setItem(
