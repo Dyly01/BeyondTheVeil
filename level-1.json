@@ -6,17 +6,6 @@
         "x": 0,
         "y": 25
     },
-
-    "collectibles": {
-        "crown": {
-            "x": 110,
-            "y": 200,
-            "width": 40,
-            "height": 35
-        }
-    },
-
-    
     "spawns": [
         {
             "x": 1600,
@@ -61,8 +50,7 @@
             "y": 725,
             "width": 60,
             "height": 100,
-            "level": "./level-4.json",
-            "requiresKey": true
+            "level": "./level-4.json"
         }
     ],
     "thrones": [],
@@ -122,10 +110,10 @@
             "color": "#4f5503"
         },
         {
-            "x": 25,
-            "y": 250,
-            "width": 200,
-            "height": 75,
+            "x": 0,
+            "y": 300,
+            "width": 225,
+            "height": 50,
             "style": "moss",
             "color": "#804000"
         },
