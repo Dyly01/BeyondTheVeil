@@ -40,6 +40,7 @@ const endingSound =
 
 music.loop = true;
 endingSound.loop = false;
+endingSound.preload = "auto";
 
 
 const savedMusicVolume =
@@ -119,10 +120,17 @@ function playEndingTheme() {
 
     stopMusic();
 
+    endingSound.pause();
+
     endingSound.currentTime =
         0;
 
-    endingSound.play().catch(() => {
+    endingSound.play().catch((error) => {
+
+        console.error(
+            "Ending theme could not play:",
+            error
+        );
 
     });
 
