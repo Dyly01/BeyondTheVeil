@@ -18,28 +18,6 @@
     "background": "castle",
     "doors": [
         {
-            "x": 3550,
-            "y": 625,
-            "width": 60,
-            "height": 100,
-            "level": "./level-5.json",
-            "destination": {
-                "x": 3450,
-                "y": 0
-            }
-        },
-        {
-            "x": 2525,
-            "y": 425,
-            "width": 60,
-            "height": 100,
-            "level": "./level-5.json",
-            "destination": {
-                "x": 2400,
-                "y": 0
-            }
-        },
-        {
             "x": 25,
             "y": 650,
             "width": 60,
@@ -55,26 +33,12 @@
             "height": 220
         }
     ],
-    "goal": {
-        "x": 3975,
-        "y": 500,
-        "width": 180,
-        "height": 220
-    },
     "platforms": [
         {
             "x": 1025,
             "y": 505,
             "width": 240,
             "height": 30,
-            "style": "stone",
-            "color": "#737d81"
-        },
-        {
-            "x": 2450,
-            "y": 540,
-            "width": 275,
-            "height": 35,
             "style": "stone",
             "color": "#737d81"
         },
@@ -95,7 +59,7 @@
             "color": "#737d81"
         },
         {
-            "x": 1525,
+            "x": 1375,
             "y": 675,
             "width": 250,
             "height": 25,
@@ -103,24 +67,16 @@
             "color": "#737d81"
         },
         {
-            "x": 2300,
-            "y": 325,
-            "width": 350,
-            "height": 25,
-            "style": "stone",
-            "color": "#737d81"
-        },
-        {
             "x": 3150,
-            "y": 100,
-            "width": 250,
-            "height": 675,
+            "y": 450,
+            "width": 150,
+            "height": 325,
             "style": "stone",
             "color": "#737d81"
         },
         {
-            "x": 2125,
-            "y": 350,
+            "x": 2050,
+            "y": 225,
             "width": 200,
             "height": 325,
             "style": "stone",
@@ -135,15 +91,7 @@
             "color": "#737d81"
         },
         {
-            "x": 2650,
-            "y": 325,
-            "width": 75,
-            "height": 225,
-            "style": "stone",
-            "color": "#737d81"
-        },
-        {
-            "x": 2350,
+            "x": 2075,
             "y": 725,
             "width": 300,
             "height": 25,
@@ -159,10 +107,82 @@
             "color": "#737d81"
         },
         {
-            "x": 2075,
-            "y": 450,
+            "x": 1750,
+            "y": 475,
             "width": 125,
             "height": 50,
+            "style": "stone",
+            "color": "#737d81"
+        },
+        {
+            "x": 2525,
+            "y": 700,
+            "width": 175,
+            "height": 50,
+            "style": "stone",
+            "color": "#737d81"
+        },
+        {
+            "x": 2425,
+            "y": 450,
+            "width": 225,
+            "height": 25,
+            "style": "stone",
+            "color": "#737d81"
+        },
+        {
+            "x": 2825,
+            "y": 375,
+            "width": 225,
+            "height": 175,
+            "style": "stone",
+            "color": "#737d81"
+        },
+        {
+            "x": 2300,
+            "y": 225,
+            "width": 100,
+            "height": 225,
+            "style": "stone",
+            "color": "#737d81"
+        },
+        {
+            "x": 3475,
+            "y": 375,
+            "width": 150,
+            "height": 25,
+            "style": "stone",
+            "color": "#737d81"
+        },
+        {
+            "x": 3375,
+            "y": 450,
+            "width": 175,
+            "height": 25,
+            "style": "stone",
+            "color": "#737d81"
+        },
+        {
+            "x": 3325,
+            "y": 550,
+            "width": 250,
+            "height": 25,
+            "style": "stone",
+            "color": "#737d81"
+        },
+        {
+            "x": 3750,
+            "y": 375,
+            "width": 125,
+            "height": 25,
+            "style": "stone",
+            "color": "#737d81"
+        },
+        {
+            "x": 3675,
+            "y": 450,
+            "width": 150,
+            "height": 25,
             "style": "stone",
             "color": "#737d81"
         }
