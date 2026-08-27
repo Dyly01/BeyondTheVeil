@@ -5,6 +5,8 @@ import {
 
 import {
     startMusic,
+    playLevelMusic,
+    playEndingTheme,
     playCollectSound
 } from "./audio.js";
 
@@ -144,7 +146,21 @@ function applyCollectibleState() {
         !level.collectibles
     ) {
 
+        playEndingTheme();
+
         return;
+
+        playLevelMusic(
+            getCurrentLevelFile()
+        );
+
+    playLevelMusic(
+        getCurrentLevelFile()
+    );
+
+    playLevelMusic(
+        getCurrentLevelFile()
+    );
 
     }
 

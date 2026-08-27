@@ -27,7 +27,22 @@ const collectSound =
     new Audio("./audio/collect.mp3");
 
 
+const levelMusicPaths = {
+    "./level-1.json": "./audio/music-level-1.mp3",
+    "./level-2.json": "./audio/music-level-2.mp3",
+    "./level-3.json": "./audio/music-level-3.mp3",
+    "./level-4.json": "./audio/music-level-4.mp3",
+    "./level-5.json": "./audio/music-level-5.mp3"
+};
+
+const music =
+    new Audio();
+
+const endingSound =
+    new Audio("./audio/ending.mp3");
+
 music.loop = true;
+endingSound.loop = false;
 
 
 const savedMusicVolume =
@@ -55,6 +70,52 @@ let soundVolume =
 
 music.volume =
     musicVolume;
+
+endingSound.volume =
+    musicVolume;
+function playLevelMusic(levelFile) {
+
+    const musicPath =
+        levelMusicPaths[levelFile] ||
+        levelMusicPaths["./level-1.json"];
+
+    if (
+        music.src.endsWith(
+            musicPath
+        )
+    ) {
+
+        startMusic();
+
+        return;
+
+    }
+
+    music.src =
+        musicPath;
+
+    music.currentTime =
+        0;
+
+    startMusic();
+
+}
+
+
+function playEndingTheme() {
+
+    stopMusic();
+
+    endingSound.currentTime =
+        0;
+
+    endingSound.play().catch(() => {
+
+    });
+
+}
+    playLevelMusic,
+    playEndingTheme,
 
 
 for (
