@@ -1,6 +1,3 @@
-const music =
-    new Audio("./audio/music.mp3");
-
 const jumpSounds =
     Array.from(
         { length: 4 },
@@ -73,6 +70,22 @@ music.volume =
 
 endingSound.volume =
     musicVolume;
+
+
+for (
+    const sound of jumpSounds
+) {
+
+    sound.volume =
+        soundVolume;
+
+}
+
+
+collectSound.volume =
+    soundVolume;
+
+
 function playLevelMusic(levelFile) {
 
     const musicPath =
@@ -114,22 +127,6 @@ function playEndingTheme() {
     });
 
 }
-    playLevelMusic,
-    playEndingTheme,
-
-
-for (
-    const sound of jumpSounds
-) {
-
-    sound.volume =
-        soundVolume;
-
-}
-
-
-collectSound.volume =
-    soundVolume;
 
 
 function startMusic() {
@@ -260,6 +257,8 @@ export {
     stopMusic,
     playJumpSound,
     playCollectSound,
+    playLevelMusic,
+    playEndingTheme,
     setMusicVolume,
     setSoundVolume,
     getMusicVolume,

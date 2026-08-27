@@ -146,21 +146,7 @@ function applyCollectibleState() {
         !level.collectibles
     ) {
 
-        playEndingTheme();
-
         return;
-
-        playLevelMusic(
-            getCurrentLevelFile()
-        );
-
-    playLevelMusic(
-        getCurrentLevelFile()
-    );
-
-    playLevelMusic(
-        getCurrentLevelFile()
-    );
 
     }
 
@@ -468,6 +454,10 @@ async function enterDoor(
 
         }
 
+            playLevelMusic(
+                getCurrentLevelFile()
+            );
+
 
         camera.x =
             0;
@@ -562,6 +552,8 @@ function checkGoal() {
     ) {
 
         gameWon = true;
+
+        playEndingTheme();
 
         return;
 
@@ -1373,6 +1365,10 @@ async function resetGame() {
 
     applyCollectibleState();
 
+    playLevelMusic(
+        getCurrentLevelFile()
+    );
+
 
     spawnPlayer(
         level
@@ -1433,6 +1429,10 @@ async function startGame() {
 
 
     applyCollectibleState();
+
+    playLevelMusic(
+        getCurrentLevelFile()
+    );
 
 
     spawnPlayer(
