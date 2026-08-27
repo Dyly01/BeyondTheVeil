@@ -39,6 +39,21 @@ const resetButton =
         "resetButton"
     );
 
+const creditsButton =
+    document.getElementById(
+        "creditsButton"
+    );
+
+const creditsMenu =
+    document.getElementById(
+        "creditsMenu"
+    );
+
+const backCreditsButton =
+    document.getElementById(
+        "backCreditsButton"
+    );
+
 
 // ============================================================
 // PAUSE
@@ -175,6 +190,40 @@ resetButton.addEventListener(
         }
 
     }
+);
+
+
+function openCredits() {
+
+    pauseMenu.style.display =
+        "none";
+
+    creditsMenu.style.display =
+        "flex";
+
+}
+
+
+function closeCredits() {
+
+    creditsMenu.style.display =
+        "none";
+
+    pauseMenu.style.display =
+        "flex";
+
+}
+
+
+creditsButton.addEventListener(
+    "click",
+    openCredits
+);
+
+
+backCreditsButton.addEventListener(
+    "click",
+    closeCredits
 );
 
 
