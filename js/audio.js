@@ -20,8 +20,23 @@ const jumpSoundStart =
 let nextJumpSound =
     0;
 
-const collectSound =
-    new Audio("./audio/collect.mp3");
+const gemCollectSound =
+    new Audio("./audio/gem-collect.wav");
+
+const itemPickupSound =
+    new Audio("./audio/item-pickup.flac");
+
+const keyPickupSound =
+    new Audio("./audio/key-pickup.mp3");
+
+gemCollectSound.preload =
+    "auto";
+
+itemPickupSound.preload =
+    "auto";
+
+keyPickupSound.preload =
+    "auto";
 
 
 const levelMusicPaths = {
@@ -114,7 +129,13 @@ for (
 }
 
 
-collectSound.volume =
+gemCollectSound.volume =
+    soundVolume;
+
+itemPickupSound.volume =
+    soundVolume;
+
+keyPickupSound.volume =
     soundVolume;
 
 
@@ -231,7 +252,13 @@ function setSoundVolume(
 
     }
 
-    collectSound.volume =
+    gemCollectSound.volume =
+        soundVolume;
+
+    itemPickupSound.volume =
+        soundVolume;
+
+    keyPickupSound.volume =
         soundVolume;
 
 
@@ -275,12 +302,36 @@ function playJumpSound() {
 }
 
 
-function playCollectSound() {
+function playGemCollectSound() {
 
-    collectSound.currentTime =
+    gemCollectSound.currentTime =
         0;
 
-    collectSound.play().catch(() => {
+    gemCollectSound.play().catch(() => {
+
+    });
+
+}
+
+
+function playItemPickupSound() {
+
+    itemPickupSound.currentTime =
+        0;
+
+    itemPickupSound.play().catch(() => {
+
+    });
+
+}
+
+
+function playKeyPickupSound() {
+
+    keyPickupSound.currentTime =
+        0;
+
+    keyPickupSound.play().catch(() => {
 
     });
 
@@ -291,7 +342,9 @@ export {
     startMusic,
     stopMusic,
     playJumpSound,
-    playCollectSound,
+    playGemCollectSound,
+    playItemPickupSound,
+    playKeyPickupSound,
     playLevelMusic,
     playEndingTheme,
     setMusicVolume,

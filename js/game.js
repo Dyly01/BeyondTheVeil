@@ -7,7 +7,9 @@ import {
     startMusic,
     playLevelMusic,
     playEndingTheme,
-    playCollectSound
+    playGemCollectSound,
+    playItemPickupSound,
+    playKeyPickupSound
 } from "./audio.js";
 
 import {
@@ -217,7 +219,7 @@ function checkCollectibles() {
         player.canDoubleJump =
             true;
 
-        playCollectSound();
+        playGemCollectSound();
 
         showDoubleJumpInfo();
 
@@ -243,7 +245,7 @@ function checkCollectibles() {
         gameState.crownCollected =
             true;
 
-        playCollectSound();
+        playItemPickupSound();
 
 
         console.log(
@@ -268,7 +270,7 @@ function checkCollectibles() {
         gameState.keyCollected =
             true;
 
-        playCollectSound();
+        playKeyPickupSound();
 
 
         console.log(
