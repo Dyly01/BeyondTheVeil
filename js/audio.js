@@ -1,8 +1,27 @@
 const music =
     new Audio("./audio/music.mp3");
 
-const jumpSound =
-    new Audio("./audio/jump.mp3");
+const jumpSounds =
+    Array.from(
+        { length: 4 },
+        () => {
+
+            const sound =
+                new Audio("./audio/jump.mp3");
+
+            sound.preload =
+                "auto";
+
+            return sound;
+
+        }
+    );
+
+const jumpSoundStart =
+    0.51;
+
+let nextJumpSound =
+    0;
 
 const collectSound =
     new Audio("./audio/collect.mp3");
@@ -25,21 +44,27 @@ const savedSoundVolume =
 let musicVolume =
     savedMusicVolume !== null
         ? Number(savedMusicVolume)
-        : 0.3;
+        : 0.25;
 
 
 let soundVolume =
     savedSoundVolume !== null
         ? Number(savedSoundVolume)
-        : 0.5;
+        : 0.4;
 
 
 music.volume =
     musicVolume;
 
 
-jumpSound.volume =
-    soundVolume;
+for (
+    const sound of jumpSounds
+) {
+
+    sound.volume =
+        soundVolume;
+
+}
 
 
 collectSound.volume =
@@ -104,8 +129,14 @@ function setSoundVolume(
         );
 
 
-    jumpSound.volume =
-        soundVolume;
+    for (
+        const sound of jumpSounds
+    ) {
+
+        sound.volume =
+            soundVolume;
+
+    }
 
     collectSound.volume =
         soundVolume;
@@ -135,10 +166,16 @@ function getSoundVolume() {
 
 function playJumpSound() {
 
-    jumpSound.currentTime =
-        0;
+    const sound =
+        jumpSounds[nextJumpSound];
 
-    jumpSound.play().catch(() => {
+    nextJumpSound =
+        (nextJumpSound + 1) % jumpSounds.length;
+
+    sound.currentTime =
+        jumpSoundStart;
+
+    sound.play().catch(() => {
 
     });
 
